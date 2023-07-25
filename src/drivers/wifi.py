@@ -1,24 +1,19 @@
-import network 
-from store.wifi import ssid, password
-# join a wifi access point
-def joinwifi():
-    """ join a wifi access point """
-    station = network.WLAN(network.STA_IF) # initiate a station mode
 
-    if not station.isconnected():
-            print('connecting to network:', ssid())
-            station.active(True)
-            station.connect(ssid(), password())
-         
+import uasyncio as asyncio
 
-            while not station.isconnected():
-                pass
+async def connect_to_wifi(ssid='SummerTime', password='Calmhat436'):
+    import network
+    try:
+        sta_if = network.WLAN(network.STA_IF)
+        if not sta_if.isconnected():
+            print('connecting to wifi network...')
+            sta_if.active(True)
+            sta_if.connect(ssid, password)
+            while not sta_if.isconnected():
+                await asyncio.sleep(1)  
+        
+        print('successfull connection to ',ssid)
+        print('network config:', sta_if.ifconfig())
 
-    # deactivating access point mode
-    ap = network.WLAN(network.AP_IF)
-    ap.active(False)
-
-    ip = station.ifconfig()[0]
-    print('connected as:', ip)
-
-    return ip
+    except asyncio.CancelledError:
+        print( "connect_to_wifi_stopped" )

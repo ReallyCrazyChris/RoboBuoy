@@ -1,0 +1,12 @@
+
+
+
+
+imu + compass
+i2c = I2C(1,scl=Pin(22), sda=Pin(21), freq=400000)  
+
+gps
+RXD=Pin(5)
+TXD=Pin(15)
+
+pwm black G26/36

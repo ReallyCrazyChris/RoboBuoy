@@ -1,10 +1,10 @@
 import uasyncio as asyncio
 import ubluetooth
-from   lib import bencode
+from lib import bencode
 
 class BLEUART():
     '''Bluetooth Low Energy - Nordic UART Service (NUS)'''
-    def __init__(self, name="bleuart"):   
+    def __init__(self, name="RoboBuoy"):   
         self.mtu = 20 # maximum transmissuin unit (ble is 20 bytes payload)
         self.name = name
         self.message = None
@@ -22,6 +22,12 @@ class BLEUART():
 
         # A resource lock for BLEUART
         self.lock = asyncio.Lock()
+        # A b-encode decode Transformer
+        self.decoder = bencode.decodeTransformer(self.message_received,0)     
+        
+    def message_received(self, result, conn_handle):
+        self.message = result
+        self.received_event.set()
 
     def ble_irq(self, event, data):
         ''' handles incomeing ble events and their data'''
@@ -38,8 +44,8 @@ class BLEUART():
         elif event == 3:
             '''GATTS_WRITE message received'''            
             chunk = self.ble.gatts_read(self.rx)
-            self.message = chunk.decode('UTF-8').strip()
-            self.received_event.set()
+            print(chunk)
+            self.decoder(chunk)
 
         elif event == 21:
             '''MTU Exchanged'''

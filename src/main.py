@@ -1,199 +1,162 @@
 import uasyncio as asyncio
+import network
 from machine import UART
 
-from math import atan2, sin, cos, radians, degrees
-
-from drivers.i2c import i2c
+from drivers.i2c import i2c # I2C Communication with IMU, Compass and Thrusters
 from drivers.imu import IMU
-from drivers.bleuart import BLEUART
 from drivers.thruster import Thruster
-
+from drivers.bleuart import BLEUART
+#from drivers.mqtt import MQTTClient
 from lib.gps import GPS
-from lib.autopilot import AutoPilot
-
+from lib.steeringPID import SteeringPID
+from lib.bencode import bdecode, bencode
+from lib.server import Server
 
 #Initilize 
-imu = IMU( i2c )
+imu = IMU( i2c )        
 imu.calibrateGyro()
-imu.calibrateAccel()
+#imu.calibrateAccel()
 
 bleuart = BLEUART('RoboBuoy')
 bleuartLock = asyncio.Lock()
-
+server = Server()
 
 #Hardware serial port 2 for GPS sentences
 gpsuart = UART(2, baudrate=9600, bits=8, parity=None, stop=1, tx=5, rx=13, rts=-1, cts=-1, txbuf=256, rxbuf=256, timeout=0, timeout_char=2)
-gps = GPS(2)
+gps = GPS()
 
-#autopilot = AutoPilot()
+steeringPID = SteeringPID()
 
 thruster = Thruster()
+thruster.arm()
 
-#Tasks
-async def steer():
-    ''' reads compass and gyro data and estimates new heading using a complementary filter'''
+
+async def fuseGps():
     try:
+        print('fuseGps started')
         while True:
-
-            # read gyro angualr velocities in deg_s and the time between readings deltaT
-            gx,gy,gz,deltaT = imu.readCalibractedGyro()
             
-            thruster.thetaPID( radians(45), radians(gz), deltaT )
-
-            await asyncio.sleep_ms(50) 
-    except asyncio.CancelledError:
-        print("steer_task_stopped")
-        thruster.active = False
-              
-
-
-
-async def estimate_heading():
-    ''' reads compass and gyro data and estimates new heading using a complementary filter'''
-
-    try:
-        while True:
-
-            # read gyro angualr velocities in deg_s and the time between readings deltaT
-            gx,gy,gz,deltaT = imu.readCalibractedGyro()
-
-            # read magnetic compass heading
-            magHeading = imu.readMagHeading()
-      
-            # if the gps is valid and the robot is moving use gps course
-            if gps.valid and gps.speed > 1:                
-                autopilot.fuseHeading(gps.course, magHeading, gz, deltaT)
-            else:
-                autopilot.fuseHeading(None, magHeading, gz, deltaT)
-
-            # headingPID loop
-            autopilot.headingPID( deltaT )
-
-            print(autopilot.currentHeading,  autopilot.rudder)
-
-            mixer(autopilot.rudder,0)
-
-            await asyncio.sleep_ms(50)  
-
-    except asyncio.CancelledError:
-        print( "estimate_heading_task_stopped" )
-        mixer(0,0)
-
-async def read_gps():
-    ''' reads gps sentence  '''
-    try:
-        while True:
-
-            await asyncio.sleep_ms(100) 
-
+            await asyncio.sleep_ms(1000)  
+            
             #read the gps sentense for the uart
             gpssentence = gpsuart.readline()
 
             if gpssentence == None:
                 continue
+
             #parse the gps sentence    
             gps.parsesentence( gpssentence )
 
-            # if the senthense is valid
-            if gps.valid :
-                print("timestamp", gps.timestamp )
-                print("lat", gps.latitude )
-                print("long", gps.longitude )
-                print("speed", gps.speed )
-                print("course", gps.course ) 
-                print("valid", gps.valid ) 
-             
+            if gps.positionvalid == False:
+                continue
+
+            #the course is valid if the robot is moving
+            if gps.speed < 1.5:
+                continue
+   
+            steeringPID.fusegps( gps.course )
+        
     except asyncio.CancelledError:
-        print( "read_gps_task_stopped" )
+        print( "fuseGps Stopped" )
 
-async def send_gpsdata_ble():
-    ''' reads gps sentences and send this via bluetooth '''
-    while True:
-        gpssentence = gpsuart.readline()
-        if gpssentence != None:
-            await bleuart.lock.acquire()
-            await bleuart.notify( gpssentence )
-            bleuart.lock.release()
-        await asyncio.sleep_ms(0)  
 
-async def receive_message ():
-    ''' receives motor control actions via bluetooth '''
+
+async def fuseCompass():
+    try:
+        print('fuseCompass started')
+        while True:
+
+            # read magnetic compass heading
+            compasscourse = imu.readMagHeading()
+            steeringPID.fusecompass(compasscourse)
+            await asyncio.sleep_ms(500)  
+    
+    except asyncio.CancelledError:
+        print( "fuseCompass Stopped" )
+
+
+async def steerCourse():
+    try:
+        
+        print('steerCourse started')
+        while True:
+
+            desiredcourse = 0
+
+            # read gyro angualr velocities in deg_s and the time between readings deltaT
+            _,_,gyro_z,deltaT = imu.readCalibractedGyro()
+
+            currentcourse = steeringPID.fusegyro(gyro_z,deltaT)
+
+            steering_angle = steeringPID.pidloop( desiredcourse, currentcourse, deltaT )
+
+            pwm_left, pwm_right = thruster.drive(steering_angle,0)
+
+            print(desiredcourse, currentcourse, steering_angle, pwm_left, pwm_right)
+
+            await asyncio.sleep_ms(50)  
+    except asyncio.CancelledError:
+        thruster.stopmotors()
+        print( "steerCourse Stopped" )
+
+async def receive_message():
+    ''' receives messages via bluetooth '''
     try:
         while True:
             if bleuart.message != None:
-                
-                if "N" == bleuart.message:
-                    #autopilot.desiredBearing = 0
-                    pass
-
-                elif "NE" == bleuart.message:
-                    #autopilot.desiredBearing = 45
-                    pass 
-
-                elif "E" == bleuart.message:
-                    #autopilot.desiredBearing = 90
-                    pass
-                elif "SE" == bleuart.message:
-                    #autopilot.desiredBearing = 135
-                    pass 
-                
-                elif "S" == bleuart.message:
-                    #autopilot.desiredBearing = 180
-                    pass
-
-                elif "SW" == bleuart.message:
-                    #autopilot.desiredBearing = 225 
-                    pass       
-
-                elif "W" == bleuart.message:
-                    #autopilot.desiredBearing = 270
-                    pass
-
-                elif "NW" == bleuart.message:
-                    #autopilot.desiredBearing = 315
-                    pass
-
-                elif "pause" == bleuart.message:
-                     thruster.active = not thruster.active               
-                else:  
-                    thruster.active = False        
-
-                bleuart.message = None
+                server.receive( bleuart.message )
+                server.react() #TODO this may need its own async co-routine
+            # clear processed message          
+            bleuart.message = None
             await bleuart.received_event.wait()
+            
+            
 
-    # when the task is cancelled stop motors
     except asyncio.CancelledError:
-       thruster.active = False    
+       pass 
 
-
-         
-async def ble_uart_task():
-    ''' waits for ble connections and starts or stops related tasks'''
-    while True:
-
-        # wait for a connection
-        print('waiting for a ble client to connect...')
+async def send_message():
+    ''' sends messages via bluetooth '''
+    try:
+        # after connection try sending
         await bleuart.connect_event.wait()
-        print('connected to ble client')               
-        await bleuart.exchange_mtu_event.wait()
-        print('mtu esablished')
+
+        while True:    
+            if len(server.sendqueue) > 0:
+                for packet in server.sendqueue:
+                    await bleuart.lock.acquire()
+                    await bleuart.notify( packet )
+                    bleuart.lock.release()
+                # clear processed message
+                server.sendqueue.clear() 
+            else:
+                await asyncio.sleep_ms(200)          
+
+    except asyncio.CancelledError:
+       pass     
+
+
+async def main_task():
+
+
+    # Start the Tasks
+    #steerCourse_Task = asyncio.create_task( steerCourse() )
+    #fuseCompass_Task = asyncio.create_task( fuseCompass() )
+    #fuseGps_Task     = asyncio.create_task( fuseGps() )
+    receive_message_Task = asyncio.create_task( receive_message() )
+    send_message_Task = asyncio.create_task( send_message() )
+    await asyncio.sleep(100000)  # Pause 1s    
+    # Stop the Tasks
+    #fuseGps_Task.cancel()
+    #fuseCompass_Task.cancel()
+    #steerCourse_Task.cancel()
+    receive_message_Task.cancel()
+    send_message_Task.cancel()
+    
         
-        #read_gps_Task = asyncio.create_task( read_gps() ) 
-        #estimate_heading_Task = asyncio.create_task( estimate_heading() )
-        receive_message_Task = asyncio.create_task( receive_message() ) 
-        steer_Task = asyncio.create_task( steer() ) 
-
-        # wait for a disconnect
-        await bleuart.disconnect_event.wait()
-        print('disconnected')
-        steer_Task.cancel()
-        #estimate_heading_Task.cancel()
-        receive_message_Task.cancel()
-
-    
-
 if __name__ == "__main__":
-    print('robobuoy')
-    asyncio.run( ble_uart_task() )
-
-    
+    try:
+        print('robobuoy v0.1')
+        asyncio.run( main_task() )
+    except:
+        thruster.stopmotors()
