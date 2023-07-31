@@ -1,7 +1,6 @@
 class BencodeFailure(Exception):
     pass
 
-
 def decode_int(x, f):
     f += 1
     newf = x.index(bytes("e", "utf-8"), f)
@@ -105,11 +104,11 @@ def bdecode(x):
     try:
         r, l = decode_func[x[0]](x, 0)
     except (IndexError, KeyError, ValueError):
+        
+        raise BencodeFailure("not a valid bencoded string")
         return False
-        #raise BencodeFailure("not a valid bencoded string")
 
     if l != len(x):
-        pass
         raise BencodeFailure("invalid bencoded value (data after valid prefix)")
 
     return r
@@ -197,8 +196,9 @@ encode_func = {
 
 
 def bencode(x):
-    return bytes(encode_func[type(x)](x))
-
+    data = bytes(encode_func[type(x)](x))
+    print(data)
+    return data
 
 def encodeTransformer(x, mtu):
     '''Generator 

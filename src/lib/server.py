@@ -18,9 +18,11 @@ class Server():
         if not len( message ) >= 1: return
         
         name = str(message[0])
-
+        print('event',name,'data',message[1])
         if name in self.listeners.keys():
-            self.listeners[name](message[1]) 
+            self.listeners[name](message[1])
+        else:
+            raise Exception('no listener for event',name) 
 
     def addListener(self, name, handler):
         self.listeners[name] = handler
