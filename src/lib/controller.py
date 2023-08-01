@@ -9,6 +9,7 @@ server = Server()
 class Controller():
     def __init__(self):
 
+        # Robot Information
         self.name = "RoboBuoy 1"
 
         # Thruster Control
@@ -22,10 +23,24 @@ class Controller():
         self.mpr = 55  #  right pwm value where the thruster start to turn
         self.maxpwm = 110 # maximum pwm signal sent to the thrusters
 
-        # Pathfinding
-        self.desiredcourse = 0 # deg°
-        self.currentcourse = 0 # deg°
+        # Position/Motion
+        self.positionvalid = False
+        self.latitude = 0 # degree decimal north
+        self.longitude = 0 # degree decimal east
+        self.latitude_string = '' # degree decimal north 24 bit precision, 
+        self.longitude_string = ''# degree decimal east 24 bit precision
+        self.speed = 0.0  #meters per second
 
+        # Pathfinding
+        self.underway = False # should the robot persue its path
+        self.currentcourse = 0 # deg° of the current heading
+        self.desiredcourse = 0 # deg° of the desired heading
+        self.currentposition = (0,0) # degree decimal north, degree decimal east
+        self.desiredposition = (0,0) # degree decimal north, degree decimal east
+        self.distancetodesiredposiiton = 0 # float meters
+        self.waypoints = [] # array of positions
+        
+        # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
         self.Kp = 1
         self.Ki = 0 #.5
@@ -47,7 +62,7 @@ class Controller():
         self.motorLeft.freq(50)
         self.motorRight.freq(50)
 
-
+        # Communication with RoboBuoyApp
         # add commands and their handlers to the server
         server.addListener('state',self.requeststate)
 
@@ -101,7 +116,6 @@ class Controller():
         }
         print('response',state)
         server.send('state',state)
-
 
     def setactive(self, active):
         print('active',active)

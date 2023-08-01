@@ -121,6 +121,18 @@ async def send_message():
        pass     
 
 
+async def bluetooth_advertise():
+    ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
+    ''' allows auto reconnect'''
+    try:
+        while True:    
+            await asyncio.sleep_ms(2000) 
+            await bleuart.lock.acquire()
+            bleuart.advertise()
+            bleuart.lock.release()
+    except asyncio.CancelledError:
+       pass    
+
 async def main_task():
 
     await controller.armmotors()
@@ -131,6 +143,7 @@ async def main_task():
     #fuseGps_Task     = asyncio.create_task( fuseGps() )
     receive_message_Task = asyncio.create_task( receive_message() )
     send_message_Task = asyncio.create_task( send_message() )
+    bluetooth_advertise_Task = asyncio.create_task( bluetooth_advertise() )
     await asyncio.sleep(100000)  # Pause 1s    
     # Stop the Tasks
     #fuseGps_Task.cancel()
@@ -138,6 +151,7 @@ async def main_task():
     steerCourse_Task.cancel()
     receive_message_Task.cancel()
     send_message_Task.cancel()
+    bluetooth_advertise_Task.cancel()
     
         
 if __name__ == "__main__": 
