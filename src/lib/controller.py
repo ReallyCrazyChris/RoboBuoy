@@ -10,7 +10,9 @@ class Controller():
     def __init__(self):
 
         # Robot Information
-        self.name = "RoboBuoy 1"
+        self.name = "Buoy 1"
+        self.battery = 63 # % Capacity of Battery Remaining
+
 
         # Thruster Control
         self.active = False # enables / disbles the thrusters
@@ -32,13 +34,14 @@ class Controller():
         self.speed = 0.0  #meters per second
 
         # Pathfinding
-        self.underway = False # should the robot persue its path
         self.currentcourse = 0 # deg° of the current heading
         self.desiredcourse = 0 # deg° of the desired heading
         self.currentposition = (0,0) # degree decimal north, degree decimal east
         self.desiredposition = (0,0) # degree decimal north, degree decimal east
-        self.distancetodesiredposiiton = 0 # float meters
+        self.distance = 0 # float meters : distance to desired posiiton
         self.waypoints = [] # array of positions
+        self.waypointradius = 2 # the radial distance in meters of a waypoint
+
         
         # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
@@ -64,7 +67,8 @@ class Controller():
 
         # Communication with RoboBuoyApp
         # add commands and their handlers to the server
-        server.addListener('state',self.requeststate)
+        server.addListener('state',self.sendstate)
+        server.addListener('motion',self.sendmotionstate)
 
         #thruster parameters 
         server.addListener('arm',self.armmotors)
@@ -88,12 +92,14 @@ class Controller():
         server.addListener('ga',self.setgpsalpha)
         # save or load relevant state from file store
 
+        # pathfinding
+        server.addListener('wp',self.setwaypoints)
         server.addListener('reset',self.resetcourse)
 
         server.addListener('save',self.savestate)
         server.addListener('load',self.loadstate)
 
-    def requeststate(self,_):
+    def sendstate(self,_):
         ''' a request, that responds with the robot state'''
         state = {
             "name":self.name,
@@ -114,58 +120,78 @@ class Controller():
             "compassalpha":self.compassalpha, 
             "gpsalpha":self.gpsalpha, 
         }
-        print('response',state)
+
         server.send('state',state)
 
-    def setactive(self, active):
-        print('active',active)
-        self.active = bool(active)   
+    def sendmotionstate(self):
+        ''' a request, that responds with the robot motion'''
+        state = {
+            #"battery":int(self.battery),
+            #"positionvalid":self.positionvalid,
+            #"active":self.active, 
+            "speed":self.speed, 
+            "currentcourse":int(self.currentcourse), 
+            "currentposition":self.currentposition,
+            #"waypoints":self.waypoints,
+            "distance":self.distance
+        }
+
+        server.send('state',state)        
+
+    def setactive(self, val):
+        self.active = bool(val)  
+        print('active',self.active) 
         self.drive()
 
-    def setsurge(self, surge):
-        self.surge = int(surge) 
-        print('surge',self.surge)
-        self.drive()
-
-    def setsteer(self, steer):
-        self.steer = int(steer)     
-        print('steer',self.steer)
+    def setsurge(self, val):
+        self.surge = int(val)
         self.drive() 
-
-    def setvmin(self, vmin):
-        print('vmin (cm/s)',vmin)
-        self.vmin = int(vmin)
-
-    def setvmax(self, vmax):
-        print('vmax (cm/s)',vmax)
-        self.vmax = int(vmax)
-        self.drive()  
-
-    def setsteergain(self, steergain):
-        print('steergain',steergain)
-        self.steergain = int(steergain)
-        self.drive()
-
-    def setmpl(self, mpl):
-        print('mpl',mpl)
-        self.mpl = int(mpl)  
-        self.surge = 1
-        self.steer = 0
-        self.drive()
-
-    def setmpr(self, mpr):
-        print('mpr',mpr)
-        self.mpr = int(mpr)  
-        self.surge = 1
-        self.steer = 0
+        print('surge',self.surge)
+        
+    def setsteer(self, val):
+        self.steer = int(val)  
         self.drive()    
+        print('steer',self.steer)
+        
 
-    def setcurrentcourse(self, currentcourse):
-        self.currentcourse = int(currentcourse) 
+    def setvmin(self, val):
+        self.vmin = int(val)
+        print('vmin (cm/s)',self.vmin)
+
+    def setvmax(self, val):
+        self.vmax = int(val)
+        self.drive() 
+        print('vmax (cm/s)',self.vmax) 
+
+    def setsteergain(self, val):
+        self.steergain = int(val)
+        self.drive()
+        print('steergain',self.steergain)
+
+    def setmpl(self, val):
+        self.mpl = int(val)  
+        self.surge = 1
+        self.steer = 0
+        self.drive()
+        print('mpl',self.mpl)
+
+    def setmpr(self, val):
+        self.mpr = int(val)  
+        self.surge = 1
+        self.steer = 0
+        self.drive()
+        print('mpr',self.mpr)    
+
+    def setwaypoints(self,val):
+        self.waypoints = val
+        print('waypoints',self.waypoints)
+
+    def setcurrentcourse(self, val):
+        self.currentcourse = int(val) 
         print('currentcourse',self.currentcourse)
     
-    def setdesiredcourse (self,desiredcourse):
-        self.desiredcourse = int(desiredcourse) 
+    def setdesiredcourse (self,val):
+        self.desiredcourse = int(val) 
         print('desiredcourse',self.desiredcourse)
 
     def setKp (self,Kp):
@@ -180,48 +206,100 @@ class Controller():
         self.Kd = float(Kd) 
         print('Kd',self.Kd)       
         
-    def setcompassalpha (self,compassalpha):
-        self.compassalpha = float(compassalpha) 
+    def setcompassalpha (self,val):
+        self.compassalpha = float(val) 
         print('compassalpha',self.compassalpha)
 
-    def setgpsalpha (self,gpsalpha):
-        self.gpsalpha = float(gpsalpha) 
+    def setgpsalpha (self,val):
+        self.gpsalpha = float(val) 
         print('gpsalpha',self.gpsalpha)
 
 
     # actual controller part
 
     def fusegyro(self,gyro_deg_s,deltaT ):
-        '''integrates the gyro rate of yaw (deg_s) into angle (deg)'''
-        self.currentcourse =  ( self.currentcourse + gyro_deg_s * deltaT )
-        # clamp to -80 ... 180 degrees
-        self.currentcourse = normalize(self.currentcourse,-180,180)
+        '''integrates the gyro rate of yaw (deg_s) into a course angle (deg)'''
+        currentcourse = ( self.currentcourse + gyro_deg_s * deltaT )
+        # clamp to -180 ... 180 degrees
+        self.currentcourse = normalize(currentcourse,-180,180)
+        
         return self.currentcourse
 
     def fusecompass(self, compasscourse):
-        '''fuses the compas course witht he current course using a complement filter, strongly weighted towards the gyro'''
-        self.currentcourse = (1.0 - self.compassalpha) * normalize(compasscourse,-180,180) + self.compassalpha * self.currentcourse
-        self.currentcourse = normalize(self.currentcourse,-180,180)
+        '''fuses the compass course witht he current course using a complement filter, strongly weighted towards the gyro'''
+        currentcourse = (1.0 - self.compassalpha) * compasscourse + self.compassalpha * self.currentcourse
+        # clamp to -180 ... 180 degrees
+        self.currentcourse = normalize(currentcourse,-180,180)
+
         return self.currentcourse
 
     def fusegps(self, gpscourse):
         '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
-        #TODO do we need normalize gps course
-        self.currentcourse = (1.0 - self.gpsalpha) * normalize(gpscourse,-180,180) + self.gpsalpha * self.currentcourse
-        self.currentcourse = normalize(self.currentcourse,-180,180)
-        return self.currentcourse    
+        currentcourse = (1.0 - self.gpsalpha) * gpscourse + self.gpsalpha * self.currentcourse
+        # clamp to -180 ... 180 degrees
+        self.currentcourse = normalize(currentcourse,-180,180)
+        return self.currentcourse 
+
+    def followpath(self):
+        ''' drives robot towards towards a waypoint '''
+
+        # is the gps position valid
+        if self.positionvalid == False:
+            return
+        
+        # are there waypoint(s) to follow
+        if len(self.waypoints) == 0:
+            return
+
+        # calculate the desired course
+        self.desiredposition = self.waypoints[0]
+        self.distance = distance(self.currentposition,self.desiredposition)
+        self.desiredcourse = bearing(self.currentposition,self.desiredposition)
+
+        # if the waypoint radius has been achieved
+        if self.distance < self.waypointradius:
+            # move onto the next waypoint
+            self.waypoints.pop(0)
+
+    def holdstation(self):
+        ''' keeps the robot in the current position  '''
+
+        # is the gps position valid
+        if self.positionvalid == False:
+            return
+
+        self.distance = distance(self.currentposition,self.desiredposition)
+        self.desiredcourse = bearing(self.currentposition,self.desiredposition)
+        
+        #TODO back off on the motor speed as we approach the waypoint radius
+        # surge = distance^2 - waypointradius .... or someting like that
+        # self.surge = ...
+
 
     def pidloop(self, deltaT):
-        ''' steering angle to maintain the desired course'''
-        self.error  = self.desiredcourse - self.currentcourse
+        ''' steering angle to the desired course'''
+
+        # choose a rotation direction that has the least amount of rotation         
+        error_1 = self.desiredcourse - self.currentcourse
+        error_2 = 360 + error_1
+        if abs(error_1) > abs(error_2):
+            self.error = error_2
+        else:
+            self.error = error_1
+
+
+        #update the integral error
         self.errSum = self.errSum + (self.error * deltaT)
+        #update the differential
         self.dErr = (self.error - self.lastErr) / deltaT
-    
+            
         self.steer = (self.Kp * self.error) + (self.Ki * self.errSum) + (self.Kd * self.dErr)
         
         self.lastErr = self.error
 
-        return self.steer 
+        return constrain(self.steer)
+
+
 
     async def armmotors(self):
         ''' arm esc motor controllers '''
@@ -267,13 +345,13 @@ class Controller():
         self.motorLeft.duty(0)
         self.motorRight.duty(0)        
 
-    def resetcourse(self, _):
+    def resetcourse(self):
         ''' resets desired course, current course, surge to 0 '''
         self.desiredcourse = 0
         self.currentcourse = 0
         self.surge = 0
 
-    def savestate(self, _ ):
+    def savestate(self):
         """write state to flash"""
         import json
         print('save state to flash')
@@ -301,7 +379,7 @@ class Controller():
 
             json.dump(state, file)
 
-    def loadstate(self, _ ):
+    def loadstate(self):
         """load state from flash"""
         import json
         print('load state from flash') 
@@ -312,6 +390,25 @@ class Controller():
         except Exception :
             pass
 
+
+def constrain(heading):
+    '''heading is constrained to -180 to 180 degree range'''
+    if (heading > 180):
+        heading -= 360
+    
+    if (heading < -180):
+        heading += 360
+    return heading
+
+
+def constrain(course):
+    '''heading is constrained to -180 to 180 degree range'''
+    if (course > 180):
+        course -= 360
+    
+    if (course < -180):
+        course += 360
+    return course    
 
 def normalize(num, lower=0.0, upper=360.0, b=False):
     """ Got this code from : https://gist.github.com/phn/1111712/35e8883de01916f64f7f97da9434622000ac0390"""
@@ -343,3 +440,70 @@ def normalize(num, lower=0.0, upper=360.0, b=False):
         res = num * 1.0  # Make all numbers float, to be consistent
 
     return res        
+
+
+def distance(p1:tuple,p2:tuple) -> int:    
+    """
+    distance in meters between 2 position
+    p1 = lat_dd,lon_dd degree decimal format
+    p2 = lat_dd,lon_dd degree decimal format
+    returns int distans in meters
+    """
+    
+    R = 6373000        # Radius of the earth in m
+    
+    lat1_dd, lon1_dd = p1
+    lat1_dd, long1_dd = radians(lat1_dd), radians(lon1_dd)
+
+    lat2_dd, lon2_dd = p2
+    lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
+    
+    deltaLat = lat2_dd - lat1_dd
+    deltaLon = lon2_dd - long1_dd
+    
+    x = deltaLon * cos((lat1_dd+lat2_dd)/2)
+    distance = sqrt(x**2 + deltaLat**2) * R
+    
+    return distance
+
+def bearing(p1:tuple, p2:tuple) -> int:
+    """
+    provides a bearing between two positions
+    p1 = (lat_dd, lon_dd) degree decimal format
+    p2 = (lat_dd, lon_dd) degree decimal format
+    """
+    lat1_dd, lon1_dd = p1
+    lat1_dd, lon1_dd = radians(lat1_dd), radians(lon1_dd)
+
+    lat2_dd, lon2_dd = p2
+    lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
+    
+    deltaLon = lon2_dd - lon1_dd
+    
+    y = sin(deltaLon) * cos(lat2_dd)
+    x = cos(lat1_dd) * sin(lat2_dd) - sin(lat1_dd) * cos(lat2_dd) * cos(deltaLon)
+    
+    bearing = (degrees(atan2(y, x)) + 360) % 360
+    return bearing
+
+def convert_dm_dd(degree :str,minutes :str, hemi :str) -> tuple:
+    """ 
+    convert degree minutes format to degrees decimal format 
+    eg 49 21.3454 S -> dd = -49.3557566
+    returns float and string representations of degree decimal
+    ISSUE# On small mcu's the float precision is low:
+        eg. '49.3557566' -> 49.35575 
+        this can cause the robot hunt or occilate around a waypoint
+    """
+    degree = int(degree)
+    minuite, minuite_decimal = minutes.split('.')
+    degree_decimal  = int(minuite + minuite_decimal) // 6
+
+    if hemi in ['S','W']:
+        degree=degree * -1
+
+    dd_str = str(degree)+'.'+str(degree_decimal)
+    dd_float = float(dd_str)
+
+    return (dd_float, dd_str)
+

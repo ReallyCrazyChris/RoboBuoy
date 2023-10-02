@@ -1,3 +1,5 @@
+from machine import Timer
+
 class BencodeFailure(Exception):
     pass
 
@@ -131,7 +133,6 @@ def encode_float(x):
 
 def encode_bool(x):
     result = bytearray()
-
     result.append(ord("j"))
 
     if x:
@@ -221,20 +222,28 @@ def decodeTransformer(successHandler, conn_handle=None):
     is called with the sucessful result
     '''
     accumulator = b''
-    
+    timer = Timer(0)
+
+    def clearaccumulator(t):
+        nonlocal accumulator
+        accumulator = b''
+
     def decodeChunk( chunk ):
         nonlocal accumulator
         accumulator = accumulator + chunk
-    
+        # clears the accunulator after 500ms of no activity
+        timer.init(period=500, mode=Timer.ONE_SHOT, callback=clearaccumulator)
         try:
             result = bdecode(accumulator)
             if result:
                 accumulator = b''
                 successHandler( result, conn_handle)
-        except BencodeFailure:
+        except BencodeFailure as error:
             pass
-    
+            
     return decodeChunk 
+
+    
 
 
 

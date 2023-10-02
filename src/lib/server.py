@@ -43,7 +43,7 @@ class Server():
 
     def react(self):
         """ processed the commands in the receivequeue as a task in the asyncio loop"""
-        #print('processing {} items in receivequeue'.format(len(receivequeue)))
+
         while len(self.receivequeue):
 
             packet = self.receivequeue.pop(0)
@@ -51,8 +51,12 @@ class Server():
 
             if not action in self.listeners:
                 return  # not a known reaction
-        
-            self.listeners[action](*packet)
+            if len(packet) > 0:
+                # action has parameters
+                print(packet)
+                self.listeners[action](*packet)
+            else:
+                self.listeners[action]()
 
 
 

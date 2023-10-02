@@ -243,53 +243,7 @@ class GPS(object):
         GGA, GSA and RMC sentences"""
         self.fix_time = time.time()
         return self.fix_time
-
-
-
-    def distance(self,p1:tuple,p2:tuple) -> int:    
-        """
-        distance in meters between 2 position
-        p1 = lat_dd,lon_dd degree decimal format
-        p2 = lat_dd,lon_dd degree decimal format
-        returns int distans in meters
-        """
-        
-        R = 6373000        # Radius of the earth in m
-        
-        lat1_dd, lon1_dd = p1
-        lat1_dd, long1_dd = radians(lat1_dd), radians(lon1_dd)
-
-        lat2_dd, lon2_dd = p2
-        lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
-        
-        deltaLat = lat2_dd - lat1_dd
-        deltaLon = lon2_dd - long1_dd
-        
-        x = deltaLon * cos((lat1_dd+lat2_dd)/2)
-        distance = sqrt(x**2 + deltaLat**2) * R
-        
-        return distance
-
-    def bearing(self, p1:tuple, p2:tuple) -> int:
-        """
-        provides a bearing between two positions
-        p1 = (lat_dd, lon_dd) degree decimal format
-        p2 = (lat_dd, lon_dd) degree decimal format
-        """
-        lat1_dd, lon1_dd = p1
-        lat1_dd, lon1_dd = radians(lat1_dd), radians(lon1_dd)
-
-        lat2_dd, lon2_dd = p2
-        lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
-        
-        deltaLon = lon2_dd - lon1_dd
-        
-        y = sin(deltaLon) * cos(lat2_dd)
-        x = cos(lat1_dd) * sin(lat2_dd) - sin(lat1_dd) * cos(lat2_dd) * cos(deltaLon)
-        
-        bearing = (degrees(atan2(y, x)) + 360) % 360
-        return bearing
-
+    
     def convert_dm_dd(self, degree :str,minutes :str, hemi :str) -> tuple:
         """ 
         convert degree minutes format to degrees decimal format 

@@ -9,31 +9,39 @@ from lib.gpsparse import GPS
 from lib.controller import Controller
 from lib.server import Server
 
-#Initilize 
+#Initilize IMU
 imu = IMU( i2c )        
-imu.calibrateGyro()
+#imu.calibrateGyro()
 #imu.calibrateAccel()
 
-server = Server()
+
+server = Server() # Server Singleton
+#External Commands
+server.addListener('calibrateMag',imu.calibrateMag)
+
+
 bleuart = BLEUART()
+# async lock to prevent multiple communication actions at the same time
 bleuartLock = asyncio.Lock()
 
 
 #Hardware serial port 2 for GPS sentences
-#gpsuart = UART(2, baudrate=9600, bits=8, parity=None, stop=1, tx=5, rx=13, rts=-1, cts=-1, txbuf=256, rxbuf=256, timeout=0, timeout_char=2)
-#gps = GPS()
+gpsuart = UART(2, baudrate=9600, bits=8, parity=None, stop=1, tx=5, rx=13, rts=-1, cts=-1, txbuf=256, rxbuf=256, timeout=0, timeout_char=2)
+#gpsuart = UART(2, baudrate=9600, bits=8, parity=None, stop=1, tx=12, rx=34, rts=-1, cts=-1, txbuf=256, rxbuf=256, timeout=0, timeout_char=2)
+gps = GPS()
 
 controller = Controller()
 
-async def fuseGps():
+async def fuseGpsTask():
     try:
-        print('fuseGps started')
+        print('fuseGps Task started')
         while True:
             
             await asyncio.sleep_ms(1000)  
             
             #read the gps sentense for the uart
             gpssentence = gpsuart.readline()
+            print(gpssentence)
 
             if gpssentence == None:
                 continue
@@ -41,38 +49,55 @@ async def fuseGps():
             #parse the gps sentence    
             gps.parsesentence( gpssentence )
 
+            controller.positionvalid = gps.positionvalid
+
             if gps.positionvalid == False:
                 continue
 
+            controller.latitude = gps.latitude # degree decimal north
+            controller.longitude = gps.longitude # degree decimal east
+            controller.latitude_string = gps.latitude_string # degree decimal north 24 bit precision, 
+            controller.longitude_string = gps.longitude_string # degree decimal east 24 bit precision
+            controller.speed = gps.speed  #meters per second
+            controller.currentposition = gps.position 
+
             #the course is valid if the robot is moving
-            if gps.speed < 1.5:
+            if gps.speed < 1:
                 continue
    
-            steeringPID.fusegps( gps.course )
+            controller.fusegps( gps.course )
         
     except asyncio.CancelledError:
-        print( "fuseGps Stopped" )
+        print( "fuseGpsTask Stopped" )
 
+def startFuseGpsTask():
+    fuseGps = asyncio.create_task( fuseGpsTask() )
+    server.addListener('sGT', fuseGps.cancel)
 
+server.addListener('GT', startFuseGpsTask) 
 
-async def fuseCompass():
+async def fuseCompassTask():
     try:
-        print('fuseCompass started')
+        print('fuseCompassTask started')
         while True:
 
             # read magnetic compass heading
             compasscourse = imu.readMagHeading()
-            steeringPID.fusecompass(compasscourse)
-            await asyncio.sleep_ms(500)  
+            controller.fusecompass(compasscourse)
+            await asyncio.sleep_ms(100)  
     
     except asyncio.CancelledError:
-        print( "fuseCompass Stopped" )
+        print( "fuseCompassTask Stopped" )
 
+def startFuseCompassTask():
+    fuseCompass = asyncio.create_task( fuseCompassTask() )
+    server.addListener('sFCT', fuseCompass.cancel)
 
-async def steerCourse():
-    try:
-        
-        print('steerCourse started')
+server.addListener('FCT', startFuseCompassTask)        
+
+async def fuseGyroTask():
+    try: 
+        print('starting fuseGyroTask')
         while True:
 
             _,_,gyro_z,deltaT = imu.readCalibractedGyro()
@@ -80,15 +105,38 @@ async def steerCourse():
             controller.pidloop( deltaT )
             controller.drive()
 
-            #print(steeringPID.desiredcourse, steeringPID.currentcourse, steeringPID.steer)
-
             await asyncio.sleep_ms(200)  
     except asyncio.CancelledError:
         controller.stop()
-        print( "steerCourse Stopped" )
+        print( "stopping fuseGyroTask" )
+
+def startFuseGyroTask():
+    fuseGyro = asyncio.create_task( fuseGyroTask() )
+    server.addListener('sFGT', fuseGyro.cancel)
+
+server.addListener('FGT', startFuseGyroTask)           
+
+
+async def sendMotionStateTask():
+    ''' sends a message to the client containg the motion parameters '''
+    try:
+        print('sendMotionStateTask started')
+        while True:
+            controller.sendmotionstate()
+            await asyncio.sleep_ms(500)  
+    except asyncio.CancelledError:
+        print( "sendMotionStateTask Stopped" )
+
+def startSendMotionStateTask():
+    motionStateTask = asyncio.create_task( sendMotionStateTask() )
+    server.addListener('sSMT', motionStateTask.cancel)
+
+server.addListener('SMT', startSendMotionStateTask)        
+
 
 async def receive_message():
-    ''' receives messages via bluetooth '''
+    ''' receives messages via bluetooth and adds them to the receive queue '''
+    print('starting server receive Task')
     try:
         while True:
             if bleuart.message != None:
@@ -101,7 +149,8 @@ async def receive_message():
        pass 
 
 async def send_message():
-    ''' sends messages via bluetooth '''
+    ''' reads messages from the server send queue and sends them via bluetooth '''
+    print('starting server send Task')
     try:
         # after connection try sending
         await bleuart.connect_event.wait()
@@ -124,6 +173,7 @@ async def send_message():
 async def bluetooth_advertise():
     ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
     ''' allows auto reconnect'''
+    print('starting Bluetooth advertise Task')
     try:
         while True:    
             await asyncio.sleep_ms(2000) 
@@ -133,28 +183,27 @@ async def bluetooth_advertise():
     except asyncio.CancelledError:
        pass    
 
-async def main_task():
+
+async def mainTaskLoop():
 
     await controller.armmotors()
 
-    # Start the Tasks
-    steerCourse_Task = asyncio.create_task( steerCourse() )
-    #fuseCompass_Task = asyncio.create_task( fuseCompass() )
-    #fuseGps_Task     = asyncio.create_task( fuseGps() )
-    receive_message_Task = asyncio.create_task( receive_message() )
-    send_message_Task = asyncio.create_task( send_message() )
-    bluetooth_advertise_Task = asyncio.create_task( bluetooth_advertise() )
-    await asyncio.sleep(100000)  # Pause 1s    
-    # Stop the Tasks
-    #fuseGps_Task.cancel()
-    #fuseCompass_Task.cancel()
-    steerCourse_Task.cancel()
-    receive_message_Task.cancel()
-    send_message_Task.cancel()
-    bluetooth_advertise_Task.cancel()
+    # Start the Tasks that must always run
+    asyncio.create_task( receive_message() )
+    asyncio.create_task( send_message() )
+    asyncio.create_task( bluetooth_advertise() )
+
+    #Start Tasks than can be stopped, and started
+    #startFuseCompassTask()
+    #startFuseGyroTask()
+
+    # Keep the mainTaskLoop running forever    
+    while 1:
+        await asyncio.sleep(100000)  # Pause 1s    
+  
     
         
 if __name__ == "__main__": 
     print('robobuoy v0.1')
-    asyncio.run( main_task() )
+    asyncio.run( mainTaskLoop() )
  

@@ -5,7 +5,7 @@ from lib import bencode
 class BLEUART():
     '''Bluetooth Low Energy - Nordic UART Service (NUS)'''
     def __init__(self, name="RoboBuoy"):   
-        self.mtu = 20 # maximum transmissuin unit (ble is 20 bytes payload)
+        self.mtu = 20 
         self.name = name
         self.message = None
         self.ble = ubluetooth.BLE()
@@ -71,7 +71,7 @@ class BLEUART():
         ''' advertises the robobouy by name and servive UUID on the ble network'''
         name = bytes("RoboBuoy", 'UTF-8')
         service = bytes(ubluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E"))
-        self.ble.gap_advertise(100, bytearray('\x02\x01\x02') + bytearray((len(name) + 1, 0x09)) + name + bytearray((len(service) + 1, 0x07)) + service)        
+        self.ble.gap_advertise(100, bytearray(b'\x02\x01\x02') + bytearray((len(name) + 1, 0x09)) + name + bytearray((len(service) + 1, 0x07)) + service)        
 
 
     async def notify(self, data):

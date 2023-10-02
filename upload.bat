@@ -1,7 +1,7 @@
 echo on
 call ./env.bat
 
-rem removing old files
+echo removing old files
 ampy rm main.py
 ampy rmdir /lib
 

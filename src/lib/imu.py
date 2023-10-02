@@ -4,6 +4,7 @@ Micropython driver for the I2C MPU9250 9-DOF Sensor
 import utime
 from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
+from lib.server import Server
 
 class IMU(object):
     '''
@@ -45,6 +46,8 @@ class IMU(object):
 
         #Load saved calibration data
         self.load()
+
+
 
     #Accelerometer
     def accelfullScaleRange( self, fullScaleRange=0 ):
@@ -103,7 +106,7 @@ class IMU(object):
     def calibrateAccel( self, samples=10, delay=10 ):
         ''' Save the accel mean as the accel bias to the imu store'''
         self.accelbias = self.meanAccel( samples, delay )
-        self.save()
+
 
 
     def readCalibractedAccel(self):
@@ -174,7 +177,7 @@ class IMU(object):
     def calibrateGyro( self, samples=10, delay=10 ):
         ''' Saves the Gyro mean as the Gyro bias to the imu store'''
         self.gyrobias = self.meanGyro( samples, delay )
-        self.save()
+
 
 
     def readCalibractedGyro(self):
@@ -245,12 +248,16 @@ class IMU(object):
         x,y,_ = self.readMag( self.magbias )
         return int(degrees(atan2(x,y)))
 
-    def calibrateMag( self, samples=800, delay=10 ):
+    def calibrateMag( self, samples, delay ):
         '''
         Creates a tuple of magbias and saves this to the imu store
         During the calibration rotate the gyro in all directions
         '''
-        print("calibrate magnetmeter, by waving the robot around in a figure of 8")
+
+        samples = int(samples) or 800
+        delay = int(delay) or 10
+
+        print("calibrate magnetmeter, place the robo bouy in the water add rotate it ")
         minx = 0
         maxx = 0
         miny = 0
@@ -333,6 +340,7 @@ class IMU(object):
     def save(self, filename='imu.json' ):
         """write imu persistant data to flash"""
         import json
+
         with open(filename, 'w') as file:
 
             store = {}            
@@ -344,6 +352,11 @@ class IMU(object):
             store["tempsensitivity"] = self.tempsensitivity
 
             json.dump(store, file)
+
+        print('saved imu config:')
+        print('accelbias',self.accelbias)
+        print('gyrobias',self.gyrobias)
+        print('magbias',self.magbias)
 
     def load(self, filename='imu.json' ):
         """load imu persistant data set from flash"""
@@ -359,6 +372,11 @@ class IMU(object):
                 #self.declination = store["declination"]
                 self.tempoffset = store["tempoffset"]
                 self.tempsensitivity = store["tempsensitivity"]
+
+                print('loaded imu config:')
+                print('accelbias',self.accelbias)
+                print('gyrobias',self.gyrobias)
+                print('magbias',self.magbias)
 
         except Exception :
             pass
