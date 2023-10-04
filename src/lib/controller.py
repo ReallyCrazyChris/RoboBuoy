@@ -1,7 +1,7 @@
 import time #TODO try to use asyncio on arm motors
 import uasyncio as asyncio
 from machine import PWM, Pin
-from math import floor, ceil, radians
+from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2
 from lib.server import Server
 
 server = Server()
@@ -131,9 +131,12 @@ class Controller():
             #"active":self.active, 
             "speed":self.speed, 
             "currentcourse":int(self.currentcourse), 
+            "desiredcourse":int(self.desiredcourse), 
             "currentposition":self.currentposition,
             #"waypoints":self.waypoints,
-            "distance":self.distance
+            "distance":self.distance,
+            "surge":self.surge, 
+            "steer":self.steer
         }
 
         server.send('state',state)        
@@ -257,9 +260,9 @@ class Controller():
         self.desiredcourse = bearing(self.currentposition,self.desiredposition)
 
         # if the waypoint radius has been achieved
-        if self.distance < self.waypointradius:
+        #if self.distance < self.waypointradius:
             # move onto the next waypoint
-            self.waypoints.pop(0)
+            #self.waypoints.pop(0)
 
     def holdstation(self):
         ''' keeps the robot in the current position  '''
@@ -271,22 +274,21 @@ class Controller():
         self.distance = distance(self.currentposition,self.desiredposition)
         self.desiredcourse = bearing(self.currentposition,self.desiredposition)
         
-        #TODO back off on the motor speed as we approach the waypoint radius
-        # surge = distance^2 - waypointradius .... or someting like that
-        # self.surge = ...
+        # back off on the motor speed as we approach the desiredposition
+        self.surge = min(self.vmax, 0.5 * self.distance * self.distance)
 
 
     def pidloop(self, deltaT):
         ''' steering angle to the desired course'''
 
-        # choose a rotation direction that has the least amount of rotation         
+        # choose a rotation direction that has the 
+        # least amount of rotation to the desired course        
         error_1 = self.desiredcourse - self.currentcourse
         error_2 = 360 + error_1
         if abs(error_1) > abs(error_2):
             self.error = error_2
         else:
             self.error = error_1
-
 
         #update the integral error
         self.errSum = self.errSum + (self.error * deltaT)

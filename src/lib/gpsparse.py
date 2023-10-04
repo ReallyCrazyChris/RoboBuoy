@@ -49,9 +49,6 @@ class GPS(object):
         self.speed = 0.0  #meters per second
         self.course = 0.0 #degrees
 
-        # Pathfinding
-        self.waypoints = [(49.69395, 10.82761)]
-
         # UART readall
         self.oldstring = bytes()
         
@@ -77,6 +74,9 @@ class GPS(object):
                 self.timestamp = (0, 0, 0)
 
         except ValueError:  # Bad Timestamp value present
+            return False
+        
+        except IndexError:
             return False
 
         # Check Receiver Data Valid Flag
@@ -106,6 +106,8 @@ class GPS(object):
                 self.longitude, self.longitude_string = self.convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
                 self.position = (self.latitude, self.longitude)
 
+                print( self.position )
+
             except ValueError:
                 return False
 
@@ -132,10 +134,14 @@ class GPS(object):
             spd_knt = float(self.gps_segments[5])
         except ValueError:
             return False
+        except IndexError:
+            return False
 
-        # Include mph and km/h
+        # Include mph and km/h ?
         self.speed = spd_knt
         self.course = course
+
+        print( self.speed, self.course )
         return True
 
     ##########################################

@@ -32,19 +32,35 @@ gps = GPS()
 
 controller = Controller()
 
+async def followpathTask():
+    try:
+        print('followpath Task started')
+        while True:
+            await asyncio.sleep_ms(1000)
+            controller.followpath()  
+
+    except asyncio.CancelledError:
+        print( "followpath Stopped" )
+
+def startFollowpathTask():
+    followPath = asyncio.create_task( followpathTask() )
+    server.addListener('sFP', followPath.cancel)
+
+server.addListener('FP', startFollowpathTask)         
+
 async def fuseGpsTask():
     try:
         print('fuseGps Task started')
         while True:
             
-            await asyncio.sleep_ms(1000)  
+            await asyncio.sleep_ms(20)  
             
             #read the gps sentense for the uart
             gpssentence = gpsuart.readline()
-            print(gpssentence)
-
+       
             if gpssentence == None:
                 continue
+            #print(gpssentence)
 
             #parse the gps sentence    
             gps.parsesentence( gpssentence )
@@ -196,6 +212,8 @@ async def mainTaskLoop():
     #Start Tasks than can be stopped, and started
     #startFuseCompassTask()
     #startFuseGyroTask()
+    startFuseGpsTask()
+    startFollowpathTask()
 
     # Keep the mainTaskLoop running forever    
     while 1:
