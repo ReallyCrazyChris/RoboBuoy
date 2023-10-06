@@ -129,14 +129,14 @@ class Controller():
             #"battery":int(self.battery),
             #"positionvalid":self.positionvalid,
             #"active":self.active, 
-            "speed":self.speed, 
+            "speed":int(self.speed), 
             "currentcourse":int(self.currentcourse), 
             "desiredcourse":int(self.desiredcourse), 
             "currentposition":self.currentposition,
             #"waypoints":self.waypoints,
             "distance":self.distance,
-            "surge":self.surge, 
-            "steer":self.steer
+            "surge":int(self.surge), 
+            "steer":int(self.steer)
         }
 
         server.send('state',state)        
@@ -259,23 +259,13 @@ class Controller():
         self.distance = distance(self.currentposition,self.desiredposition)
         self.desiredcourse = bearing(self.currentposition,self.desiredposition)
 
+        # back off on the motor speed as we approach the desiredposition
+        self.surge = min(self.vmax, 0.5 * self.distance * self.distance)
+
         # if the waypoint radius has been achieved
         #if self.distance < self.waypointradius:
             # move onto the next waypoint
             #self.waypoints.pop(0)
-
-    def holdstation(self):
-        ''' keeps the robot in the current position  '''
-
-        # is the gps position valid
-        if self.positionvalid == False:
-            return
-
-        self.distance = distance(self.currentposition,self.desiredposition)
-        self.desiredcourse = bearing(self.currentposition,self.desiredposition)
-        
-        # back off on the motor speed as we approach the desiredposition
-        self.surge = min(self.vmax, 0.5 * self.distance * self.distance)
 
 
     def pidloop(self, deltaT):

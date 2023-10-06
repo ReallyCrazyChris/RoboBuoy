@@ -210,8 +210,8 @@ async def mainTaskLoop():
     asyncio.create_task( bluetooth_advertise() )
 
     #Start Tasks than can be stopped, and started
-    #startFuseCompassTask()
     #startFuseGyroTask()
+    #startFuseCompassTask()
     startFuseGpsTask()
     startFollowpathTask()
 
