@@ -6,7 +6,7 @@ from lib.imu import IMU
 from lib.bleuart import BLEUART
 
 from lib.gpsparse import GPS
-from lib.store import Controller
+from lib.controller import Controller
 from lib.server import Server
 
 #Initilize IMU
@@ -18,6 +18,12 @@ imu = IMU( i2c )
 server = Server() # Server Singleton
 #External Commands
 server.addListener('calibrateMag',imu.calibrateMag)
+
+
+bleuart = BLEUART()
+# async lock to prevent multiple communication actions at the same time
+bleuartLock = asyncio.Lock()
+
 
 #Hardware serial port 2 for GPS sentences
 gpsuart = UART(2, baudrate=9600, bits=8, parity=None, stop=1, tx=5, rx=13, rts=-1, cts=-1, txbuf=256, rxbuf=256, timeout=0, timeout_char=2)
@@ -144,21 +150,70 @@ def startSendMotionStateTask():
 server.addListener('SMT', startSendMotionStateTask)        
 
 
+async def receive_message():
+    ''' receives messages via bluetooth and adds them to the receive queue '''
+    print('starting server receive Task')
+    try:
+        while True:
+            if bleuart.message != None:
+                server.receive( bleuart.message )
+                server.react() #TODO this may need its own async co-routine
+            # clear processed message          
+            bleuart.message = None
+            await bleuart.received_event.wait()
+    except asyncio.CancelledError:
+       pass 
+
+async def send_message():
+    ''' reads messages from the server send queue and sends them via bluetooth '''
+    print('starting server send Task')
+    try:
+        # after connection try sending
+        await bleuart.connect_event.wait()
+
+        while True:    
+            if len(server.sendqueue) > 0:
+                for packet in server.sendqueue:
+                    await bleuart.lock.acquire()
+                    await bleuart.notify( packet )
+                    bleuart.lock.release()
+                # clear processed message
+                server.sendqueue.clear() 
+            else:
+                await asyncio.sleep_ms(200)          
+
+    except asyncio.CancelledError:
+       pass     
+
+
+async def bluetooth_advertise():
+    ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
+    ''' allows auto reconnect'''
+    print('starting Bluetooth advertise Task')
+    try:
+        while True:    
+            await asyncio.sleep_ms(2000) 
+            await bleuart.lock.acquire()
+            bleuart.advertise()
+            bleuart.lock.release()
+    except asyncio.CancelledError:
+       pass    
+
 
 async def mainTaskLoop():
 
-    #await controller.armmotors()
+    await controller.armmotors()
 
     # Start the Tasks that must always run
-    asyncio.create_task( server.receive_message() )
-    asyncio.create_task( server.send_message() )
-    asyncio.create_task( server.bluetooth_advertise() )
+    asyncio.create_task( receive_message() )
+    asyncio.create_task( send_message() )
+    asyncio.create_task( bluetooth_advertise() )
 
     #Start Tasks than can be stopped, and started
     #startFuseGyroTask()
     #startFuseCompassTask()
-    #startFuseGpsTask()
-    #startFollowpathTask()
+    startFuseGpsTask()
+    startFollowpathTask()
 
     # Keep the mainTaskLoop running forever    
     while 1:
