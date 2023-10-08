@@ -2,8 +2,17 @@ import uasyncio as asyncio
 import ubluetooth
 from lib import bencode
 
+
 class BLEUART():
     '''Bluetooth Low Energy - Nordic UART Service (NUS)'''
+
+    _instance = None # is a singleton
+    
+    def __new__(class_, *args, **kwargs):
+        if not isinstance(class_._instance, class_):
+            class_._instance = object.__new__(class_, *args, **kwargs)
+        return class_._instance
+
     def __init__(self, name="RoboBuoy"):   
         self.mtu = 20 
         self.name = name
@@ -13,12 +22,13 @@ class BLEUART():
         self.ble.irq(self.ble_irq)
         self.register()
         self.advertise()
+        self.is_connected = False
 
         # Asyncrouns Flags that are emitted
-        self.connect_event =  asyncio.ThreadSafeFlag()
-        self.exchange_mtu_event =  asyncio.ThreadSafeFlag()
-        self.disconnect_event =  asyncio.ThreadSafeFlag()
-        self.received_event =  asyncio.ThreadSafeFlag()
+        self.connect_flag     =  asyncio.ThreadSafeFlag()
+        self.disconnect_flag  =  asyncio.ThreadSafeFlag()
+        self.exchange_mtu_flag =  asyncio.ThreadSafeFlag()
+        self.received_flag     =  asyncio.ThreadSafeFlag()
 
         # A resource lock for BLEUART
         self.lock = asyncio.Lock()
@@ -27,31 +37,35 @@ class BLEUART():
         
     def message_received(self, result, conn_handle):
         self.message = result
-        self.received_event.set()
+        self.received_flag.set()
+        
 
     def ble_irq(self, event, data):
         ''' handles incomeing ble events and their data'''
 
         if event == 1:
             '''CENTRAL_CONNECT'''
-            self.connect_event.set()
+            self.is_connected = True
+            self.connect_flag.set()
+
  
         elif event == 2:
             '''CENTRAL_DISCONNECT'''
             self.advertise()
-            self.disconnect_event.set()
+            self.is_connected = True
+            self.disconnect_flag.set()
+            
       
         elif event == 3:
             '''GATTS_WRITE message received'''            
             chunk = self.ble.gatts_read(self.rx)
-            print(chunk)
             self.decoder(chunk)
 
         elif event == 21:
             '''MTU Exchanged'''
             _handler, mtu  = data            
             self.mtu = mtu or 20  
-            self.exchange_mtu_event.set()
+            self.exchange_mtu_flag.set()
 
     def register(self):        
         ''' Constructs a Nordic UART Service (NUS) '''
@@ -92,7 +106,8 @@ class BLEUART():
 
     def disconnect(self):
         ''' disconnects the client'''
-        self.ble.gap_disconnect(0)       
+        self.ble.gap_disconnect(0)
+      
 
         
 

@@ -158,7 +158,6 @@ def encode_string(x):
 
 def encode_list(x):
     result = bytearray()
-
     result.append(ord("l"))
 
     for i in x:
@@ -171,7 +170,6 @@ def encode_list(x):
 
 def encode_dict(x):
     result = bytearray()
-
     result.append(ord("d"))
 
     # for k, v in sorted(x.items()):
@@ -198,7 +196,6 @@ encode_func = {
 
 def bencode(x):
     data = bytes(encode_func[type(x)](x))
-    print(data)
     return data
 
 def encodeTransformer(x, mtu):
@@ -242,27 +239,3 @@ def decodeTransformer(successHandler, conn_handle=None):
             pass
             
     return decodeChunk 
-
-    
-
-
-
-if __name__ == "__main__":
-
- 
-    def successHandler(result, conn_handle):
-        print(result, conn_handle)
-
-    decodeChunk = decodeTransformer(successHandler,0)   
-
-    generator = encodeTransformer('hello wonderfull world',5)
-    for chunk in generator:
-        decodeChunk(chunk)
-
-    generator = encodeTransformer('one great step for mankind',5)
-    for chunk in generator:
-        decodeChunk(chunk)    
-
-    generator = encodeTransformer('tobeornottobe',5)
-    for chunk in generator:
-        decodeChunk(chunk)                    

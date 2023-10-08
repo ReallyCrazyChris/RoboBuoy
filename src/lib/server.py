@@ -4,116 +4,98 @@ from lib.bleuart import BLEUART
 bleuart = BLEUART()
 bleuartLock = asyncio.Lock() # async lock to prevent multiple communication actions at the same time
 
-class Server():
+listeners = {}
+sendqueue = []
+receivequeue = []
+    
+def messageHandler(message):
 
-    _instance = None # Server is a singleton
-    def __new__(class_, *args, **kwargs):
-        if not isinstance(class_._instance, class_):
-            class_._instance = object.__new__(class_, *args, **kwargs)
-        return class_._instance
+    if not len( message ) >= 1: return
+    
+    name = str(message[0])
 
-    def __init__(self) -> None:
-        self.listeners = {}
-        self.sendqueue = []
-        self.receivequeue = []
-        
-    def messageHandler(self, message):
+    if name in listeners.keys():
+        listeners[name](message[1])
+    else:
+        raise Exception('no listener for event',name) 
 
-        print('messageHandler', message)
+def addListener(name, handler):
+    listeners[name] = handler
+    
+def removeListener(name):
+    del listeners[name]
 
-        if not len( message ) >= 1: return
-        
-        name = str(message[0])
-        print('event',name,'data',message[1])
-        if name in self.listeners.keys():
-            self.listeners[name](message[1])
+def send(*packet):
+    """sends commands to a host server"""
+    if bleuart.is_connected:
+        sendqueue.append(packet)
+
+def receive(packet):
+    """recives and queue's commands to be reacted apon"""
+    receivequeue.append(packet)
+
+def react():
+    """ processed the commands in the receivequeue as a task in the asyncio loop"""
+
+    while len(receivequeue):
+
+        packet = receivequeue.pop(0)
+        action = packet.pop(0)
+
+        if not action in listeners:
+            # not a known reaction
+            print(action, 'unknown')
+            return  
+        if len(packet) > 0: 
+            # action has parameters
+            listeners[action](*packet)
         else:
-            raise Exception('no listener for event',name) 
+            listeners[action]()
 
-    def addListener(self, name, handler):
-        self.listeners[name] = handler
-        
-    def removeListener(self, name):
-        del self.listeners[name]
+async def receive_message():
+    ''' receives messages via bluetooth and adds them to the receive queue '''
+    print('starting server receive Task')
+    try:
+        while True:
+            if bleuart.message != None:
+                receive( bleuart.message )
+                react() #TODO this may need its own async co-routine
+            # clear processed message          
+            bleuart.message = None
+            await bleuart.received_flag.wait()
+            
+    except asyncio.CancelledError:
+        pass 
 
+async def send_message():
+    ''' reads messages from the server send queue and sends them via bluetooth '''
+    print('starting server send Task')
+    try:
 
-    def send(self, *packet):
-        """sends commands to a host server"""
-        self.sendqueue.append(packet)
-
-
-    def receive(self, packet):
-        """recives and queue's commands to be reacted apon"""
-        self.receivequeue.append(packet)
-
-
-    def react(self):
-        """ processed the commands in the receivequeue as a task in the asyncio loop"""
-
-        while len(self.receivequeue):
-
-            packet = self.receivequeue.pop(0)
-            action = packet.pop(0)
-
-            if not action in self.listeners:
-                return  # not a known reaction
-            if len(packet) > 0:
-                # action has parameters
-                print(packet)
-                self.listeners[action](*packet)
+        while True:    
+            if len(sendqueue) > 0:
+                for packet in sendqueue:
+                    await bleuart.lock.acquire()
+                    await bleuart.notify( packet )
+                    bleuart.lock.release()
+                # clear processed message
+                sendqueue.clear() 
             else:
-                self.listeners[action]()
+                await asyncio.sleep_ms(200)          
+
+    except asyncio.CancelledError:
+        pass     
 
 
-    async def receive_message(self):
-        ''' receives messages via bluetooth and adds them to the receive queue '''
-        print('starting server receive Task')
-        try:
-            while True:
-                if bleuart.message != None:
-                    self.receive( bleuart.message )
-                    self.react() #TODO this may need its own async co-routine
-                # clear processed message          
-                bleuart.message = None
-                await bleuart.received_event.wait()
-        except asyncio.CancelledError:
-            pass 
-
-    async def send_message(self):
-        ''' reads messages from the server send queue and sends them via bluetooth '''
-        print('starting server send Task')
-        try:
-            # after connection try sending
-            await bleuart.connect_event.wait()
-
-            while True:    
-                if len(self.sendqueue) > 0:
-                    for packet in self.sendqueue:
-                        await bleuart.lock.acquire()
-                        await bleuart.notify( packet )
-                        bleuart.lock.release()
-                    # clear processed message
-                    self.sendqueue.clear() 
-                else:
-                    await asyncio.sleep_ms(200)          
-
-        except asyncio.CancelledError:
-            pass     
-
-
-    async def bluetooth_advertise(self):
-        ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
-        ''' allows auto reconnect'''
-        print('starting Bluetooth advertise Task')
-        try:
-            while True:    
-                await asyncio.sleep_ms(2000) 
-                await bleuart.lock.acquire()
-                bleuart.advertise()
-                bleuart.lock.release()
-        except asyncio.CancelledError:
-            pass    
-
-
-
-
+async def bluetooth_advertise():
+    ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
+    ''' allows auto reconnect'''
+    print('starting Bluetooth advertise Task')
+    try:
+        while True:    
+            await asyncio.sleep_ms(2000) 
+            await bleuart.lock.acquire()
+            bleuart.advertise()
+            bleuart.lock.release()
+    except asyncio.CancelledError:
+        pass    

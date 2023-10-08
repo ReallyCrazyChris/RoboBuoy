@@ -1,6 +1,11 @@
 import time
 import uasyncio as asyncio
 from math import sin, cos, sqrt, atan2, degrees, radians
+from utils import convert_dm_dd
+from lib.gpsuart import gpsuart
+from lib import server
+from lib.store import Store
+store = Store()
 
 __HEMISPHERES = ('N', 'S', 'E', 'W')
 
@@ -8,9 +13,13 @@ class GPS(object):
 
     """GPS NMEA Sentence Parser. Creates object that stores all relevant GPS data and statistics.
     Parses sentences one character at a time using update(). """
-
-        # Max Number of Characters a valid sentence can be (based on GGA sentence)
     
+    _instance = None # is a singleton
+    
+    def __new__(class_, *args, **kwargs):
+        if not isinstance(class_._instance, class_):
+            class_._instance = object.__new__(class_, *args, **kwargs)
+        return class_._instance
 
     def __init__(self, local_offset=0):
         """Setup GPS Object Status Flags, Internal Data Registers, etc"""
@@ -39,19 +48,51 @@ class GPS(object):
         self.local_offset = local_offset
 
         # Position/Motion
-        self.positionvalid = False
-        self.timestamp = (0, 0, 0)
-        self.latitude = 0
-        self.longitude = 0
-        self.latitude_string = ''
-        self.longitude_string = ''
-        self.position = (0,0)
-        self.speed = 0.0  #meters per second
-        self.course = 0.0 #degrees
+        #self.positionvalid = False
+        #self.timestamp = (0, 0, 0)
+        #self.latitude = 0
+        #self.longitude = 0
+        #self.latitude_string = ''
+        #self.longitude_string = ''
+        #self.position = (0,0)
+        #self.speed = 0.0  #meters per second
+        #self.course = 0.0 #degrees
 
         # UART readall
         self.oldstring = bytes()
-        
+
+        # Events
+        self.positionAvailable =  asyncio.ThreadSafeFlag()
+        self.speedAvailable =  asyncio.ThreadSafeFlag()
+        self.courseAvailable =  asyncio.ThreadSafeFlag()
+
+        server.addListener('startReadGpsTask',self.startReadGpsTask)
+
+    ########################################
+    # GPS Asyncronous Tasks
+    ########################################
+
+    def startReadGpsTask(self):
+        readGps = asyncio.create_task( self.readGpsTask() )
+        server.addListener('stopReadGpsTask', readGps.cancel) 
+
+    async def readGpsTask(self):
+        '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
+        try:
+            print('starting readGpsTask')
+            while True:
+               
+                #read the gps sentense for the uart
+                gpssentence = gpsuart.readline()
+       
+                if gpssentence != None:
+                    self.parsesentence( gpssentence )
+
+                await asyncio.sleep_ms(50)
+
+        except asyncio.CancelledError:
+            print( "stopping readGpsTask" )     
+            
     ########################################
     # Sentence Parsers
     ########################################
@@ -102,28 +143,26 @@ class GPS(object):
                 if lon_hemi not in __HEMISPHERES:
                     raise ValueError()                    
 
-                self.latitude, self.latitude_string = self.convert_dm_dd(lat_degs, lat_mins, lat_hemi)
-                self.longitude, self.longitude_string = self.convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
-                self.position = (self.latitude, self.longitude)
+                store.latitude, store.latitude_string = convert_dm_dd(lat_degs, lat_mins, lat_hemi)
+                store.longitude, store.longitude_string = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
+                store.position = (store.latitude, store.longitude)
+                store.positionvalid = True
 
-                print( self.position )
-
+                self.positionAvailable.set()
+                
             except ValueError:
                 return False
-
-            self.positionvalid = True
 
             # Update Last Fix Time
             self.new_fix_time()
 
         else:  # Clear Position Data if Sentence is 'Invalid'
-            self.latitude = 0
-            self.latitude_string = '0'
-            self.longitude = 0
-            self.longitude_string ='0'
-            self.position = (0,0)
-
-            self.positionvalid = False
+            store.latitude = 0
+            store.latitude_string = '0'
+            store.longitude = 0
+            store.longitude_string ='0'
+            store.position = (0,0)
+            store.positionvalid = False
 
         return True
 
@@ -137,11 +176,9 @@ class GPS(object):
         except IndexError:
             return False
 
-        # Include mph and km/h ?
-        self.speed = spd_knt
-        self.course = course
+        store.gpsspeed = spd_knt
+        store.gpscourse = course
 
-        print( self.speed, self.course )
         return True
 
     ##########################################
@@ -204,7 +241,7 @@ class GPS(object):
                     self.active_segment += 1
                     self.gps_segments.append('')
 
-                # Store All Other printable character and check CRC when ready
+                # store All Other printable character and check CRC when ready
                 else:
                     self.gps_segments[self.active_segment] += new_char
 
@@ -250,26 +287,5 @@ class GPS(object):
         self.fix_time = time.time()
         return self.fix_time
     
-    def convert_dm_dd(self, degree :str,minutes :str, hemi :str) -> tuple:
-        """ 
-        convert degree minutes format to degrees decimal format 
-        eg 49 21.3454 S -> dd = -49.3557566
-        returns float and string representations of degree decimal
-        ISSUE# On small mcu's the float precision is low:
-            eg. '49.3557566' -> 49.35575 
-            this can cause the robot hunt or occilate around a waypoint
-        """
-        degree = int(degree)
-        minuite, minuite_decimal = minutes.split('.')
-        degree_decimal  = int(minuite + minuite_decimal) // 6
-
-        if hemi in ['S','W']:
-            degree=degree * -1
-
-        dd_str = str(degree)+'.'+str(degree_decimal)
-        dd_float = float(dd_str)
-
-        return (dd_float, dd_str)
-
     # The supported NMEA sentences    
     supported_sentences = { 'VTG': gpvtg,  'GLL': gpgll } # GPS + GLONASS

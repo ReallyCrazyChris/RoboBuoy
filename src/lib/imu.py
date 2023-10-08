@@ -2,9 +2,13 @@
 Micropython driver for the I2C MPU9250 9-DOF Sensor
 """
 import utime
+import lib.server as server
 from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
-from lib.server import Server
+
+from lib.i2c import i2c
+
+
 
 class IMU(object):
     '''
@@ -15,7 +19,14 @@ class IMU(object):
     TODO: Persist and Restore the constants
     '''
 
-    def __init__( self, i2c ):
+    _instance = None # is a singleton
+    
+    def __new__(class_, *args, **kwargs):
+        if not isinstance(class_._instance, class_):
+            class_._instance = object.__new__(class_, *args, **kwargs)
+        return class_._instance
+
+    def __init__( self ):
 
         #Networking
         self.i2c = i2c 
@@ -46,6 +57,12 @@ class IMU(object):
 
         #Load saved calibration data
         self.load()
+
+        server.addListener('calibrateGyro',self.calibrateGyro)
+        server.addListener('calibrateAccel',self.calibrateAccel)
+        server.addListener('calibrateMag',self.calibrateMag)
+
+  
 
 
 

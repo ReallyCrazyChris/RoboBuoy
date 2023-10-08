@@ -1,102 +1,99 @@
-
 import uasyncio as asyncio
-from lib.server import Server
+from lib import server
+from lib.store import Store
+from lib.utils import normalize, constrain
+from lib.imu import IMU
+from lib.gps import GPS
 
-server = Server()
+imu = IMU()
+gps = GPS()
+store = Store()
 
-class Course(object):
+########################
+# Fuse Gyro Task
+def startFuseGyroTask():
+    fuseGyro = asyncio.create_task( fuseGyroTask() )
+    server.addListener('stopFuseGyroTask', fuseGyro.cancel) 
+
+server.addListener('startFuseGyroTask', startFuseGyroTask)   
+
+async def fuseGyroTask():
+    ''' 
+    fuses the integrated gyro course with the currentcourse 
+    performs the steering ang pid loop
     '''
-        provides tasks to calculate a relaible course
-    '''
+    try: 
+        print('starting fuseGyroTask')
+        while True:
 
-    def __init__( self ): 
-        server.addListener('FGT', self.startFuseGyroTask) 
+            # Integrate the gyro, update the current course
+            _,_,gyro_z,deltaT = imu.readCalibractedGyro()
+            currentcourse = ( store.currentcourse + gyro_z * deltaT )
+            store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees TODO use a mutator ?
 
-    def startFuseGyroTask(self):
-        fuseGyro = asyncio.create_task( self.fuseGyroTask() )
-        server.addListener('sFGT', fuseGyro.cancel)
+            # steering angle PID controller
+            error_1 = store.desiredcourse - store.currentcourse
+            error_2 = 360 + error_1
+            if abs(error_1) > abs(error_2):
+                store.error = error_2
+            else:
+                store.error = error_1
 
-    async def fuseGyroTask():
-        try: 
-            print('starting fuseGyroTask')
-            while True:
-
-                _,_,gyro_z,deltaT = imu.readCalibractedGyro()
-                controller.fusegyro(gyro_z,deltaT)
-                controller.pidloop( deltaT )
-                controller.drive()
-
-                await asyncio.sleep_ms(200)  
-        except asyncio.CancelledError:
-            controller.stop()
-            print( "stopping fuseGyroTask" )
-
-
-
-              
-
-
-
-        
-    async def fuseGpsTask():
-        try:
-            print('fuseGps Task started')
-            while True:
+            #update the integral error
+            store.errSum = store.errSum + (store.error * deltaT)
+            #update the differential
+            store.dErr = (store.error - store.lastErr) / deltaT
                 
-                await asyncio.sleep_ms(20)  
-                
-                #read the gps sentense for the uart
-                gpssentence = gpsuart.readline()
-        
-                if gpssentence == None:
-                    continue
-                #print(gpssentence)
-
-                #parse the gps sentence    
-                gps.parsesentence( gpssentence )
-
-                controller.positionvalid = gps.positionvalid
-
-                if gps.positionvalid == False:
-                    continue
-
-                controller.latitude = gps.latitude # degree decimal north
-                controller.longitude = gps.longitude # degree decimal east
-                controller.latitude_string = gps.latitude_string # degree decimal north 24 bit precision, 
-                controller.longitude_string = gps.longitude_string # degree decimal east 24 bit precision
-                controller.speed = gps.speed  #meters per second
-                controller.currentposition = gps.position 
-
-                #the course is valid if the robot is moving
-                if gps.speed < 1:
-                    continue
-    
-                controller.fusegps( gps.course )
+            store.steer = constrain((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
             
-        except asyncio.CancelledError:
-            print( "fuseGpsTask Stopped" )
+            store.lastErr = store.error
 
-    def startFuseGpsTask():
-        fuseGps = asyncio.create_task( fuseGpsTask() )
-        server.addListener('sGT', fuseGps.cancel)
+            await asyncio.sleep_ms(50)  
+    except asyncio.CancelledError:
+        print( "stopping fuseGyroTask" )
 
-    server.addListener('GT', startFuseGpsTask) 
+########################
+# Fuse Compass Task
+def startFuseCompassTask():
+    fuseCompass = asyncio.create_task( fuseCompassTask() )
+    server.addListener('stopFuseCompassTask', fuseCompass.cancel)   
 
-    async def fuseCompassTask():
-        try:
-            print('fuseCompassTask started')
-            while True:
+server.addListener('startFuseCompassTask', startFuseCompassTask) 
 
-                # read magnetic compass heading
-                compasscourse = imu.readMagHeading()
-                controller.fusecompass(compasscourse)
-                await asyncio.sleep_ms(100)  
-        
-        except asyncio.CancelledError:
-            print( "fuseCompassTask Stopped" )
+async def fuseCompassTask():
+    '''fuses the compass course with the currentcourse using a complement filter, strongly weighted towards the current course'''
+    try:
+        print('starting fuseCompassTask')
+        while True:
 
-    def startFuseCompassTask():
-        fuseCompass = asyncio.create_task( fuseCompassTask() )
-        server.addListener('sFCT', fuseCompass.cancel)
+            # read magnetic compass heading
+            compasscourse = imu.readMagHeading()
+            currentcourse = (1.0 - store.compassalpha) * compasscourse + store.compassalpha * store.currentcourse
+            store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+            await asyncio.sleep_ms(100)  
+    
+    except asyncio.CancelledError:
+        print( "stopping fuseCompassTask" )
 
-    server.addListener('FCT', startFuseCompassTask)        
+########################
+# Fuse GPS Task
+def startFuseGpsTask():
+    fuseGps = asyncio.create_task( fuseGpsTask() )
+    server.addListener('stopFuseGpsTask', fuseGps.cancel) 
+
+server.addListener('startFuseGpsTask', startFuseGpsTask)
+
+async def fuseGpsTask():
+    '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
+    try:
+        print('starting fuseGpsTask')
+        while True:
+            
+            await gps.courseAvailable.wait()
+
+            if store.gpsspeed >= 1:
+                currentcourse = (1.0 - store.gpsalpha) * store.gpscourse + store.gpsalpha * store.currentcourse
+                store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+                    
+    except asyncio.CancelledError:
+        print( "stopping fuseGpsTask" )       
