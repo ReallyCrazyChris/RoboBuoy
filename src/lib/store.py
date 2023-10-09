@@ -12,8 +12,12 @@ class Store(object):
 
     def __init__( self ):
         
-        self.name = "1"
-        self.battery = 63 # % Capacity of Battery Remaining
+        self.name = "Mark"
+        self.color= "green"
+        self.number = 1
+
+        # Battery
+        self.battery = 35 # % Capacity of Battery Remaining
 
         # Position
         self.positionvalid = False
@@ -53,8 +57,8 @@ class Store(object):
         self.compassalpha = 0.97  # compasComplemt filter weighted towards the gyro
         self.gpsalpha = 0.03      # gpsComplement  filter weighted towards the gps
 
-        # Thruster Control
-        self.active = False # enables / disbles the thrusters
+        # Motor Control
+        self.active = False # enables / disbles the motors
         self.surge = 0 #  desired robot speed cm/s
         self.steer = 0 #  desired robot angualr rotation deg/s
         self.vmin = 0  #  minimum robot velocity cm/s
@@ -62,7 +66,9 @@ class Store(object):
         self.steergain = 100 # steering gain
         self.mpl = 53  #  left pwm value where the thruster start to turn
         self.mpr = 55  #  right pwm value where the thruster start to turn
-        self.maxpwm = 110 # maximum pwm signal sent to the thrusters
+        self.maxpwm = 110 # maximum pwm signal sent to the motors
+
+
 
         server.addListener('active',self.setactive) 
         server.addListener('surge',self.setsurge)
@@ -88,17 +94,13 @@ class Store(object):
                 await asyncio.sleep_ms(1000)  
 
                 state = {
-                    "position":self.position,
+                    "battery":int(self.battery),
                     "positionvalid":bool(self.positionvalid),
-                    "gpsspeed":int(self.gpsspeed), 
+                    "position":self.position,
                     "currentcourse":int(self.currentcourse), 
-                    "desiredcourse":int(self.desiredcourse), 
                     "distance":int(self.distance),
-                    "surge":int(self.surge), 
-                    "steer":int(self.steer),
-                    "battery":int(self.battery)
                 }
-            
+
                 server.send('state',state)
                 
 
@@ -107,8 +109,12 @@ class Store(object):
 
     def getstate(self):
         ''' sends state parameters to the RoboBouyApp '''
+        
         state = {
             "name":self.name,
+            "color":self.color,
+            "number":self.number,
+            "battery":self.battery,
             "active":self.active, 
             "surge":self.surge, 
             "steer":self.steer, 
@@ -125,6 +131,7 @@ class Store(object):
             "Kd":self.Kd, 
             "compassalpha":self.compassalpha, 
             "gpsalpha":self.gpsalpha, 
+
         }
 
         server.send('state',state)
@@ -132,7 +139,8 @@ class Store(object):
     ####################
     # Setters
     def setactive(self,val):
-        self.active = bool(val)  
+        self.active = bool(val) 
+        print('setactive', self.active) 
 
     def setsurge(self,val):
         self.surge = int(val)
