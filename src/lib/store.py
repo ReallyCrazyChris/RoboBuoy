@@ -58,7 +58,7 @@ class Store(object):
         self.gpsalpha = 0.03      # gpsComplement  filter weighted towards the gps
 
         # Motor Control
-        self.active = False # enables / disbles the motors
+        self.motorsactive = False # enables / disbles the motors
         self.surge = 0 #  desired robot speed cm/s
         self.steer = 0 #  desired robot angualr rotation deg/s
         self.vmin = 0  #  minimum robot velocity cm/s
@@ -74,11 +74,14 @@ class Store(object):
         server.addListener('surge',self.setsurge)
         server.addListener('dc',self.setdesiredcourse)
         server.addListener('wp',self.setwaypoints)
-        server.addListener('getstate',self.getstate)
         server.addListener('save',self.savestate)
         server.addListener('load',self.loadstate)
 
-        server.addListener('SMT', self.startSendMotionStateTask) 
+        server.addListener('SMT', self.startSendMotionStateTask)
+        server.addListener('getSteerPIDState', self.getSteerPIDState)
+        server.addListener('getMotorState', self.getMotorState)   
+
+
 
     ##################### 
     # SendMotionStateTask
@@ -98,7 +101,8 @@ class Store(object):
                     "positionvalid":bool(self.positionvalid),
                     "position":self.position,
                     "currentcourse":int(self.currentcourse), 
-                    "distance":int(self.distance),
+                    "surge":int(self.surge),
+                    "distance":int(self.distance)
                 }
 
                 server.send('state',state)
@@ -107,9 +111,9 @@ class Store(object):
         except asyncio.CancelledError:
             print( "stopping sendMotionStateTask")
 
-    def getstate(self):
-        ''' sends state parameters to the RoboBouyApp '''
-        
+
+    def old_getstate(self):
+        ''' send the state to the RoboBouyApp '''
         state = {
             "name":self.name,
             "color":self.color,
@@ -124,18 +128,43 @@ class Store(object):
             "mpl":self.mpl, 
             "mpr":self.mpr, 
             "maxpwm":self.maxpwm, 
-            "desiredcourse":self.desiredcourse, 
-            "currentcourse":self.currentcourse, 
+            #"dcourse":int(self.desiredcourse), 
+            "ccourse":int(self.currentcourse), 
             "Kp":self.Kp, 
             "Ki":self.Ki, 
             "Kd":self.Kd, 
             "compassalpha":self.compassalpha, 
-            "gpsalpha":self.gpsalpha, 
-
+            "gpsalpha":self.gpsalpha,
+            "a":"b"
         }
 
         server.send('state',state)
 
+    def getSteerPIDState(self):
+        ''' send the state to the RoboBouyApp '''
+        state = {
+            "Kp":float(self.Kp), 
+            "Ki":float(self.Ki), 
+            "Kd":float(self.Kd)
+        }
+        server.send('state',state)
+
+    def getMotorState(self):
+        ''' send the state to the RoboBouyApp '''
+        state = {
+            "active":bool(self.active), 
+            "surge":int(self.surge), 
+            "steer":int(self.steer), 
+            "vmin":int(self.vmin), 
+            "vmax":int(self.vmax), 
+            "steergain":int(self.steergain), 
+            "mpl":int(self.mpl),
+            "mpr":int(self.mpr),
+            "maxpwm":int(self.maxpwm)
+        }
+        server.send('state',state)        
+         
+        
     ####################
     # Setters
     def setactive(self,val):

@@ -52,32 +52,27 @@ async def driveMotorsTask():
         print('starting driveMotorsTask')
         while 1:
 
-            if store.active:
+            vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
+            vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
 
-                vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
-                vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
+            # clamp max and min motor speeds  
+            vl = min(store.vmax,vl)
+            vl = max(store.vmin,vl)
+            vr = min(store.vmax,vr)
+            vr = max(store.vmin,vr)
 
-                # clamp max and min motor speeds  
-                vl = min(store.vmax,vl)
-                vl = max(store.vmin,vl)
-                vr = min(store.vmax,vr)
-                vr = max(store.vmin,vr)
+            pwm_left = (vl - store.vmin) * (store.maxpwm - store.mpl) / (store.vmax - store.vmin) + store.mpl
+            pwm_left = int(pwm_left)
+            motorLeft.duty(pwm_left)
+    
+            pwm_right = (vr - store.vmin) * (store.maxpwm - store.mpr) / (store.vmax - store.vmin) + store.mpr
+            pwm_right = int(pwm_right)
+            motorRight.duty(pwm_right)
 
-                pwm_left = (vl - store.vmin) * (store.maxpwm - store.mpl) / (store.vmax - store.vmin) + store.mpl
-                pwm_left = int(pwm_left)
-                motorLeft.duty(pwm_left)
-        
-                pwm_right = (vr - store.vmin) * (store.maxpwm - store.mpr) / (store.vmax - store.vmin) + store.mpr
-                pwm_right = int(pwm_right)
-                motorRight.duty(pwm_right)
-
-            else:
-                motorLeft.duty(0)
-                motorRight.duty(0)  
-
-            await asyncio.sleep_ms(10) 
+            await asyncio.sleep_ms(10) #Try without
 
     except asyncio.CancelledError:
+            
             motorLeft.duty(0)
             motorRight.duty(0)  
             print( "stopping driveMotorsTask") 
