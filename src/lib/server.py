@@ -11,7 +11,7 @@ receivequeue = []
 def messageHandler(message):
 
     if not len( message ) >= 1: return
-    
+
     name = str(message[0])
 
     if name in listeners.keys():
@@ -44,7 +44,7 @@ def react():
 
         if not action in listeners:
             # not a known reaction
-            print(action, 'unknown')
+            print('action: ',action, ' is unknown')
             return  
         if len(packet) > 0: 
             # action has parameters
@@ -52,9 +52,9 @@ def react():
         else:
             listeners[action]()
 
-async def receiveMessageTask():
+async def receiveTask():
     ''' receives messages via bluetooth and adds them to the receive queue '''
-    print('starting receiveMessageTask')
+    print('starting receiveTask')
     try:
         while True:
             if bleuart.message != None:
@@ -67,9 +67,9 @@ async def receiveMessageTask():
     except asyncio.CancelledError:
         pass 
 
-async def sendMessageTask():
+async def sendTask():
     ''' reads messages from the server send queue and sends them via bluetooth '''
-    print('starting sendMessageTask')
+    print('starting sendTask')
     try:
 
         while True:    
@@ -87,10 +87,10 @@ async def sendMessageTask():
         pass     
 
 
-async def bluetoothAdvertiseTask():
+async def advertiseTask():
     ''' sends robobouy advertisement via via bluetooth every 2 seconds'''
     ''' allows auto reconnect'''
-    print('starting bluetoothAdvertiseTask')
+    print('starting advertiseTask')
     try:
         while True:    
             await asyncio.sleep_ms(2000) 

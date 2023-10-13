@@ -66,11 +66,14 @@ async def fuseCompassTask():
         print('starting fuseCompassTask')
         while True:
 
-            # read magnetic compass heading
-            compasscourse = imu.readMagHeading()
-            currentcourse = (1.0 - store.compassalpha) * compasscourse + store.compassalpha * store.currentcourse
-            store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
-            await asyncio.sleep_ms(100)  
+            if store.magalpha > 0:
+                # read magnetic compass heading
+                magcourse = imu.readMagHeading()
+                currentcourse = (1.0 - store.magalpha) * magcourse + store.magalpha * store.currentcourse
+                store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+                await asyncio.sleep_ms(100)  
+            else:
+                await asyncio.sleep_ms(1000) # Dont burdon the event loop unnessiseraily  
     
     except asyncio.CancelledError:
         print( "stopping fuseCompassTask" )
@@ -84,16 +87,26 @@ def startFuseGpsTask():
 server.addListener('startFuseGpsTask', startFuseGpsTask)
 
 async def fuseGpsTask():
-    '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
+    '''fuses the gps course with the currentcourse '''
     try:
         print('starting fuseGpsTask')
         while True:
             
             await gps.courseAvailable.wait()
 
-            if store.gpsspeed >= 1:
-                currentcourse = (1.0 - store.gpsalpha) * store.gpscourse + store.gpsalpha * store.currentcourse
+            # update the currentcourse based on the latest gps cource
+            if store.gpsalpha > 0 and store.gpsspeed >= 1:# must be moving for the gpscource to be valid           
+                # Complementary filter strongly weighted towards the gps
+                currentcourse = (1.0 - store.gpsalpha) * store.currentcourse + store.gpsalpha * store.gpscourse
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
-                    
+
+            # update the compass declination based on the latest gps cource
+            if store.declinationalpha > 0 and store.gpsspeed >= 1:
+                declination =  (1.0 - store.declinationalpha) * (store.gpscourse - store.magcourse) + ( store.magdeclination * store.declinationalpha )
+                store.magdeclination = normalize(declination,-180,180)
+
+
+
+
     except asyncio.CancelledError:
         print( "stopping fuseGpsTask" )       

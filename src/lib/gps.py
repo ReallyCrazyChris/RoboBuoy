@@ -1,9 +1,9 @@
 import time
 import uasyncio as asyncio
-from math import sin, cos, sqrt, atan2, degrees, radians
-from utils import convert_dm_dd
+
+from lib.utils import convert_dm_dd, normalize
 from lib.gpsuart import gpsuart
-from lib import server
+
 from lib.store import Store
 store = Store()
 
@@ -55,8 +55,8 @@ class GPS(object):
         #self.latitude_string = ''
         #self.longitude_string = ''
         #self.position = (0,0)
-        #self.speed = 0.0  #meters per second
-        #self.course = 0.0 #degrees
+        #self.gpsspeed = 0.0  #meters per second
+        #self.gpscourse = 0.0 #degrees
 
         # UART readall
         self.oldstring = bytes()
@@ -66,15 +66,11 @@ class GPS(object):
         self.speedAvailable =  asyncio.ThreadSafeFlag()
         self.courseAvailable =  asyncio.ThreadSafeFlag()
 
-        server.addListener('startReadGpsTask',self.startReadGpsTask)
+   
 
     ########################################
     # GPS Asyncronous Tasks
     ########################################
-
-    def startReadGpsTask(self):
-        readGps = asyncio.create_task( self.readGpsTask() )
-        server.addListener('stopReadGpsTask', readGps.cancel) 
 
     async def readGpsTask(self):
         '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
@@ -143,9 +139,9 @@ class GPS(object):
                 if lon_hemi not in __HEMISPHERES:
                     raise ValueError()                    
 
-                store.latitude, store.latitude_string = convert_dm_dd(lat_degs, lat_mins, lat_hemi)
-                store.longitude, store.longitude_string = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
-                store.position = (store.latitude, store.longitude)
+                latitude, latitude_string = convert_dm_dd(lat_degs, lat_mins, lat_hemi)
+                longitude, longitude_string = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
+                store.position = (latitude, longitude)
                 store.positionvalid = True
 
                 self.positionAvailable.set()
@@ -157,10 +153,6 @@ class GPS(object):
             self.new_fix_time()
 
         else:  # Clear Position Data if Sentence is 'Invalid'
-            store.latitude = 0
-            store.latitude_string = '0'
-            store.longitude = 0
-            store.longitude_string ='0'
             store.position = (0,0)
             store.positionvalid = False
 
@@ -177,7 +169,10 @@ class GPS(object):
             return False
 
         store.gpsspeed = spd_knt
-        store.gpscourse = course
+        store.gpscourse = normalize(course,-180,180)
+
+        self.courseAvailable.set() # notifies course.fuseGPS 
+        self.speedAvailable.set()
 
         return True
 

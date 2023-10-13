@@ -2,36 +2,40 @@ import uasyncio as asyncio
 from lib.store import Store
 from lib import server
 from lib import course
-from lib import path
-from lib import motors
 from lib.gps import GPS
+from lib.motors import armMotorsCoroutine
+from lib.statemachine import StateMachine
+from lib.states import Stop, Manual, Auto
 
+# use store and gps singleton instances
 store = Store()
 gps = GPS()
+
 
 async def mainTaskLoop():
 
     # Start the Tasks that must always run
-    asyncio.create_task( server.receiveMessageTask() )
-    asyncio.create_task( server.sendMessageTask() )
-    asyncio.create_task( server.bluetoothAdvertiseTask() )
+    asyncio.create_task( server.receiveTask() )
+    asyncio.create_task( server.sendTask() )
+    asyncio.create_task( server.advertiseTask() )
+    asyncio.create_task( gps.readGpsTask() )
+    asyncio.create_task( store.sendMotionStateTask() )
 
-    # Start the Tasks that keep the Robot in course
-    course.startFuseGyroTask()
-    #course.startFuseCompassTask()
-    course.startFuseGpsTask()
+    # Start the Tasks that keep the Robot on course
+    asyncio.create_task( course.fuseGyroTask() )
+    asyncio.create_task( course.fuseCompassTask() )
+    asyncio.create_task( course.fuseGpsTask() )
+    
+    # Statemachine to manage the robots operational modes aka transition states
+    sm = StateMachine()
+    sm.addState(Stop())
+    sm.addState(Manual())
+    sm.addState(Auto())
+    sm.setState('stop')
+    server.addListener('mode',sm.transitionTo)
 
-    # Start the Task that hold station or follow a wapoint path
-    gps.startReadGpsTask()
-    path.startFollowPathTask()
-    #path.startHoldStationTask()
-
-    # Start Tasks the send state to the RoboBuoyApp
-    store.startSendMotionStateTask()
-
-    # Arm and Start the motors 
-    await motors.armMotorsTask()
-    motors.startDriveMotorsTask()
+     # Arm the motors 
+    await armMotorsCoroutine()
 
     # Keep the mainTaskLoop running forever    
     while 1:

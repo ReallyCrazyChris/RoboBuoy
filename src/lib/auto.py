@@ -1,5 +1,6 @@
 '''
-    follows a path of waypoints
+    Autonomously
+    follows a path of waypoints or
     holds the current station (position)
 '''
 import uasyncio as asyncio
@@ -13,15 +14,9 @@ store = Store()
 imu = IMU()
 gps = GPS()
 
-def startFollowPathTask():
-    followPath = asyncio.create_task( followPathTask() )
-    server.addListener('stopFollowPathTask', followPath.cancel) 
-
-server.addListener('startFollowPathTask', startFollowPathTask)     
-
-async def followPathTask():
+async def autoTask():
     try: 
-        print('starting followPathTask')
+        print('starting autoTask')
 
         await gps.positionAvailable.wait()
 
@@ -50,12 +45,12 @@ async def followPathTask():
                     # set the hold position
                     store.destination = store.position
                 
-                #TODO notify RoboBuoyApp that the waypoins have changed
+                store.sendWaypointsUpdate()
 
             await gps.positionAvailable.wait()
 
     except asyncio.CancelledError:
-        print( "stopping followPathTask" )
+        print( "stopping autoTask" )
 
            
 
