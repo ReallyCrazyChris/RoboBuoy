@@ -11,12 +11,6 @@ store = Store()
 
 ########################
 # Fuse Gyro Task
-def startFuseGyroTask():
-    fuseGyro = asyncio.create_task( fuseGyroTask() )
-    server.addListener('stopFuseGyroTask', fuseGyro.cancel) 
-
-server.addListener('startFuseGyroTask', startFuseGyroTask)   
-
 async def fuseGyroTask():
     ''' 
     fuses the integrated gyro course with the currentcourse 
@@ -48,44 +42,30 @@ async def fuseGyroTask():
             
             store.lastErr = store.error
 
-            await asyncio.sleep_ms(50)  
+            await asyncio.sleep_ms(20)  
     except asyncio.CancelledError:
         print( "stopping fuseGyroTask" )
 
 ########################
 # Fuse Compass Task
-def startFuseCompassTask():
-    fuseCompass = asyncio.create_task( fuseCompassTask() )
-    server.addListener('stopFuseCompassTask', fuseCompass.cancel)   
-
-server.addListener('startFuseCompassTask', startFuseCompassTask) 
 
 async def fuseCompassTask():
     '''fuses the compass course with the currentcourse using a complement filter, strongly weighted towards the current course'''
     try:
         print('starting fuseCompassTask')
         while True:
-
+            store.magcourse = imu.readMagHeading()
             if store.magalpha > 0:
                 # read magnetic compass heading
-                magcourse = imu.readMagHeading()
-                currentcourse = (1.0 - store.magalpha) * magcourse + store.magalpha * store.currentcourse
+                currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * store.magcourse
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
-                await asyncio.sleep_ms(100)  
-            else:
-                await asyncio.sleep_ms(1000) # Dont burdon the event loop unnessiseraily  
-    
+            await asyncio.sleep_ms(100)  
+           
     except asyncio.CancelledError:
         print( "stopping fuseCompassTask" )
 
 ########################
 # Fuse GPS Task
-def startFuseGpsTask():
-    fuseGps = asyncio.create_task( fuseGpsTask() )
-    server.addListener('stopFuseGpsTask', fuseGps.cancel) 
-
-server.addListener('startFuseGpsTask', startFuseGpsTask)
-
 async def fuseGpsTask():
     '''fuses the gps course with the currentcourse '''
     try:
@@ -102,11 +82,8 @@ async def fuseGpsTask():
 
             # update the compass declination based on the latest gps cource
             if store.declinationalpha > 0 and store.gpsspeed >= 1:
-                declination =  (1.0 - store.declinationalpha) * (store.gpscourse - store.magcourse) + ( store.magdeclination * store.declinationalpha )
+                declination =  (1.0 - store.declinationalpha) * store.magdeclination + ( store.declinationalpha * (store.gpscourse - store.magcourse)  )
                 store.magdeclination = normalize(declination,-180,180)
-
-
-
 
     except asyncio.CancelledError:
         print( "stopping fuseGpsTask" )       

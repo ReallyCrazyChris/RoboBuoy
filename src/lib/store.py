@@ -49,14 +49,15 @@ class Store(object):
         self.lastErr = 0  # Previous error
         
         # Complimentary Filter : How much trust is given in the GPS and Compass Readings 
-        self.magalpha = 0  # % trust in the compass course
-        self.gpsalpha = 0.97      # % trust in the gps course
-        self.declinationalpha = 0 # % we trust in the gps to calculate the magnetic declination
+        
+        self.gpsalpha = 0.97  # % trust in the gps course
+        self.magalpha = 0.00  # % trust in the compass course
+        self.declinationalpha = 0.00 # % we trust in the gps to calculate the magnetic declination
         # Motor State - never set these directly
         self.surge = 0 #  desired robot speed cm/s
         self.steer = 0 #  desired robot angualr rotation deg/s
         self.vmin = 0  #  minimum robot velocity cm/s
-        self.vmax = 50 #  maximum robot velocity cm/s
+        self.vmax = 20 #  maximum robot velocity cm/s
         self.steergain = 100 # steering gain
         self.mpl = 53  #  left pwm value where the motor starts to turn
         self.mpr = 55  #  right pwm value where the motor starts to turn
