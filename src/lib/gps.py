@@ -122,14 +122,15 @@ class GPS(object):
             # Longitude / Latitude
             try:
                 # Latitude
-                l_string = self.gps_segments[1]
+                l_string = self.gps_segments[1] #4941.66419
+          
                 lat_degs = l_string[0:2]
                 lat_mins = l_string[2:]
                 lat_hemi = self.gps_segments[2]
-                
+
                 # Longitude
-                l_string = self.gps_segments[3]
-                lon_degs = l_string[0:3]
+                l_string = self.gps_segments[3] #01049.63852
+                lon_degs = l_string[0:3] 
                 lon_mins = l_string[3:]
                 lon_hemi = self.gps_segments[4]
 
@@ -139,11 +140,11 @@ class GPS(object):
                 if lon_hemi not in __HEMISPHERES:
                     raise ValueError()                    
 
-                latitude, latitude_string = convert_dm_dd(lat_degs, lat_mins, lat_hemi)
-                longitude, longitude_string = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
+                latitude =  convert_dm_dd(lat_degs, lat_mins, lat_hemi)
+                longitude = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
+
                 store.position = (latitude, longitude)
                 store.positionvalid = True
-
                 self.positionAvailable.set()
                 
             except ValueError:

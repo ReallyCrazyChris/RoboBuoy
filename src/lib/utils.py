@@ -40,60 +40,22 @@ def normalize(num, lower=0.0, upper=360.0, b=False):
 
     return res        
 
-
-def distance(p1:tuple,p2:tuple) -> int:    
-    """
-    distance in meters between 2 position
-    p1 = lat_dd,lon_dd degree decimal format
-    p2 = lat_dd,lon_dd degree decimal format
-    returns int distans in meters
-    """
-    
-    R = 6373000        # Radius of the earth in m
-    
-    lat1_dd, lon1_dd = p1
-    lat1_dd, long1_dd = radians(lat1_dd), radians(lon1_dd)
-
-    lat2_dd, lon2_dd = p2
-    lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
-    
-    deltaLat = lat2_dd - lat1_dd
-    deltaLon = lon2_dd - long1_dd
-    
-    x = deltaLon * cos((lat1_dd+lat2_dd)/2)
-    distance = sqrt(x**2 + deltaLat**2) * R
-    
-    return distance
-
-def bearing(p1:tuple, p2:tuple) -> int:
-    """
-    provides a bearing between two positions
-    p1 = (lat_dd, lon_dd) degree decimal format
-    p2 = (lat_dd, lon_dd) degree decimal format
-    """
-    lat1_dd, lon1_dd = p1
-    lat1_dd, lon1_dd = radians(lat1_dd), radians(lon1_dd)
-
-    lat2_dd, lon2_dd = p2
-    lat2_dd, lon2_dd = radians(lat2_dd), radians(lon2_dd)
-    
-    deltaLon = lon2_dd - lon1_dd
-    
-    y = sin(deltaLon) * cos(lat2_dd)
-    x = cos(lat1_dd) * sin(lat2_dd) - sin(lat1_dd) * cos(lat2_dd) * cos(deltaLon)
-    
-    bearing = (degrees(atan2(y, x)) + 360) % 360
-    return bearing
-
 def convert_dm_dd(degree :str,minutes :str, hemi :str) -> tuple:
-    """ 
-    convert degree minutes format to degrees decimal format 
-    eg 49 21.3454 S -> dd = -49.3557566
-    returns float and string representations of degree decimal
-    ISSUE# On small mcu's the float precision is low:
-        eg. '49.3557566' -> 49.35575 
-        this can cause the robot hunt or occilate around a waypoint
-    """
+    '''
+    Converts "degrees, decimal.minutes" -> degrees.decimal 
+
+    Returns tuple :
+        float   degrees.decimal with 6 digits of precision,
+        integer with 9 digits of precision
+
+    e.g.
+    49.6939697, 496939697 =  convert_dm_dd("49","41.638187","N") 
+
+    Micropyhton has poor floating point precision
+    this means that distance and bearing calculations are too inaccurate.
+    The solution here providesds float values, but also integervalues specific for the 
+    distance and bearing calculaiton.
+    ''' 
     degree = int(degree)
     minuite, minuite_decimal = minutes.split('.')
     degree_decimal  = int(minuite + minuite_decimal) // 6
@@ -101,7 +63,57 @@ def convert_dm_dd(degree :str,minutes :str, hemi :str) -> tuple:
     if hemi in ['S','W']:
         degree=degree * -1
 
-    dd_str = str(degree)+'.'+str(degree_decimal)
-    dd_float = float(dd_str)
+    dd_float = float(str(degree)+'.'+str(degree_decimal))
 
-    return (dd_float, dd_str)
+    dd_str = str(degree)+str(degree_decimal) 
+    dd_str = '{:<09s}'.format(dd_str) # Micropython 10 Digits Precision (2147483647), we choose 9 digit precision
+    dd = dd[:9]
+    
+    return dd
+
+def convert_dd_int(degreedecimal):
+    '''
+    converts degree decimal to big int
+    "49.6939697" => 496939697
+    '''
+    degree, decimal = degreedecimal.split('.')
+    dd = str(degree)+str(decimal) 
+    dd = '{:<09s}'.format(dd) # Micropython 10 Digits Precision (2147483647), we choose 9 digit precision
+    dd = dd[:9]
+    return int(dd)
+
+def distancebearing(position_str,destination_str):
+    '''
+    Provides distance (meters:float) and bearing (degrees:float) from a position to a destination 
+    This calculation is suitable for distances 10km or less and it is customized to mitigate the 
+    poor floating point precision of Micropython
+    For larger distances the Haversine formula would be needed
+    '''
+
+    print('position_str',position_str)
+    lat_p = convert_dd_int(position_str[0])
+    lon_p = convert_dd_int(position_str[1])
+    print('lat_p,lon_p',lat_p,lon_p)
+
+    print('destination_str',destination_str)
+    lat_d = convert_dd_int(destination_str[0])
+    lon_d = convert_dd_int(destination_str[1])
+    print('lat_d,lon_d',lat_d,lon_d)
+
+    dy = lat_d-lat_p # delta latitude
+    dx = lon_d-lon_p # delta longitude
+
+    # correct dx due to the curvature of the earth
+    latA = float(destination_str[0])
+    latB = float(position_str[0])
+    latAvg = (latA+latB)/2
+    dx = dx*cos(radians(latAvg))   
+
+    arcdegrees = sqrt(dx**2 + dy**2)    # good old pythagoras
+    meters = arcdegrees * 0.011112      # 111120 / 10000000 # 111120 meters in an arcdegree
+    meters = round(meters,1)
+
+    bearing = degrees(atan2(dx,dy))
+    bearing = round(bearing,1) 
+
+    return meters, bearing

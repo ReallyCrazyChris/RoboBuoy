@@ -5,7 +5,7 @@
 '''
 import uasyncio as asyncio
 from lib import server
-from lib.utils import distance, bearing
+from lib.utils import distancebearing, convert_dd_int
 from lib.imu import IMU
 from lib.gps import GPS
 from lib.store import Store
@@ -27,12 +27,12 @@ async def autoTask():
                 
             # go to the next waypoint 
             if len(store.waypoints) > 0:
-                store.destination = store.waypoints[0]
+  
+                store.destination = store.position
 
             # course and distance to the next waypoint
-            store.distance = distance(store.position,store.destination)
-            store.desiredcourse = bearing(store.position,store.destination)
-
+            store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
+            print('distance,bearing',store.distance, store.desiredcourse)
             # back off on the thruster surge speed as we approach the waypoint
             store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
 

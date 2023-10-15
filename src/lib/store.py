@@ -24,18 +24,19 @@ class Store(object):
         # Battery
         self.battery = 35   # % Capacity of battery remaining
         # Position, Course & Speed
-        self.positionvalid = False # valid gps position
-        self.position = (0,0)      # degree decimal north, degree decimal east
-        self.gpscourse = 0 
-        self.gpsspeed = 0.0        # knots
-        self.magcourse = 0     # magnetic compass cource
+        self.positionvalid = False  # valid gps position
+        self.position = ("49.7087829", "10.8322847") # string degree decimal 
+    
+        self.gpscourse = 0      # degrees
+        self.gpsspeed = 0.0     # knots
+        self.magcourse = 0      # magnetic compass cource
         self.magdeclination = 0 # magnetic compass declinaiton
-        self.currentcourse = 0     # deg° of the current heading
+        self.currentcourse = 0  # deg° of the current heading
         # AutonomousPathfinding
-        self.destination = (0,0) # degree decimal north, degree decimal east
+        self.destination = (0,0) # (int,int) degree decimal 9 digit precision
         self.distance = 0        # float meters : distance to desired posiiton
         self.desiredcourse = 0   # deg° of the desired heading
-        self.waypoints = []      # waypoint positions
+        self.waypoints = []      # [(int,int)] degree decimal 9 digit precision
         self.waypointarrivedradius = 5 # waypoint arrived radius (meters)
         # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
@@ -145,6 +146,7 @@ class Store(object):
     def setdesiredcourse(self,val):
         self.desiredcourse = int(val)
     def setwaypoints(self,val):
+        print(val)
         self.waypoints = val 
     def setwaypointarrivedradius(self,val):
         self.waypointarrivedradius = int(val) 
