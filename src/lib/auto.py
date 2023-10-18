@@ -5,7 +5,7 @@
 '''
 import uasyncio as asyncio
 from lib import server
-from lib.utils import distancebearing, convert_dd_int
+from lib.utils import distancebearing
 from lib.imu import IMU
 from lib.gps import GPS
 from lib.store import Store

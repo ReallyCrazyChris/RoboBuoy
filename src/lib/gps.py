@@ -54,7 +54,7 @@ class GPS(object):
         #self.longitude = 0
         #self.latitude_string = ''
         #self.longitude_string = ''
-        #self.position = (0,0)
+        #self.position = ("0","0")
         #self.gpsspeed = 0.0  #meters per second
         #self.gpscourse = 0.0 #degrees
 
@@ -145,6 +145,7 @@ class GPS(object):
 
                 store.position = (latitude, longitude)
                 store.positionvalid = True
+                print(store.position,store.positionvalid)
                 self.positionAvailable.set()
                 
             except ValueError:
@@ -154,7 +155,6 @@ class GPS(object):
             self.new_fix_time()
 
         else:  # Clear Position Data if Sentence is 'Invalid'
-            store.position = (0,0)
             store.positionvalid = False
 
         return True

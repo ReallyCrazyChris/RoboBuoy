@@ -40,9 +40,9 @@ def normalize(num, lower=0.0, upper=360.0, b=False):
 
     return res        
 
-def convert_dm_dd(degree :str,minutes :str, hemi :str) -> tuple:
+def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
     '''
-    Converts "degrees, decimal.minutes" -> degrees.decimal 
+    Converts "degrees, decimal.minutes" -> degrees.decimal:str 
 
     Returns tuple :
         float   degrees.decimal with 6 digits of precision,
@@ -63,15 +63,13 @@ def convert_dm_dd(degree :str,minutes :str, hemi :str) -> tuple:
     if hemi in ['S','W']:
         degree=degree * -1
 
-    dd_float = float(str(degree)+'.'+str(degree_decimal))
+    dd = str(degree)+"."+str(degree_decimal) 
+    dd = '{:<010s}'.format(dd) # Micropython 10 Digits Precision (2147483647), 
+    dd = dd[:10] #we choose 9 digit precision
 
-    dd_str = str(degree)+str(degree_decimal) 
-    dd_str = '{:<09s}'.format(dd_str) # Micropython 10 Digits Precision (2147483647), we choose 9 digit precision
-    dd = dd[:9]
-    
     return dd
 
-def convert_dd_int(degreedecimal):
+def convert_dd_int(degreedecimal:str) -> int:
     '''
     converts degree decimal to big int
     "49.6939697" => 496939697
