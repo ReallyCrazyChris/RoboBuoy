@@ -25,7 +25,7 @@ class Store(object):
         self.battery = 35   # % Capacity of battery remaining
         # Position, Course & Speed
         self.positionvalid = False  # valid gps position
-        self.position = ("49.7087829", "10.8322847") # string degree decimal 
+        self.position = ("49.68630810", "10.825340") # string degree decimal 
     
         self.gpscourse = 0      # degrees
         self.gpsspeed = 0.0     # knots
@@ -33,10 +33,10 @@ class Store(object):
         self.magdeclination = 0 # magnetic compass declinaiton
         self.currentcourse = 0  # deg° of the current heading
         # AutonomousPathfinding
-        self.destination = (0,0) # (int,int) degree decimal 9 digit precision
+        self.destination = ("49.68580458", "10.82547235") # (str,str) degree decimal 9 digit precision
         self.distance = 0        # float meters : distance to desired posiiton
         self.desiredcourse = 0   # deg° of the desired heading
-        self.waypoints = []      # [(int,int)] degree decimal 9 digit precision
+        self.waypoints = []      # [(str,str)] degree decimal 9 digit precision
         self.waypointarrivedradius = 5 # waypoint arrived radius (meters)
         # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
@@ -80,7 +80,7 @@ class Store(object):
         # AutonomousPathfinding Listeners
         server.addListener('dc',self.setdesiredcourse)                
         server.addListener('wp',self.setwaypoints)
-        server.addListener('waypointarrivedradius',self.setwaypointarrivedradius)
+        server.addListener('wr',self.setwaypointarrivedradius)
 
         # Steering PID Listeners
         server.addListener('Kp',self.setKp)
