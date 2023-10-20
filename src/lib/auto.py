@@ -18,39 +18,30 @@ async def autoTask():
     try: 
         print('starting autoTask')
 
-        await gps.positionAvailable.wait()
-
-        # set the hold position
+        #await gps.positionAvailable.wait()
+  
+        # assume tht we hold station first    
         store.destination = store.position
 
         while True:
+            if(len(store.waypoints)): #follow the waypoints
+                store.destination = store.waypoints[0]
+                store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
+                store.surge = store.vmax
+                print('auto: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge, len(store.waypoints))
+
+                if len(store.waypoints) > 0 and store.distance < store.waypointarrivedradius:
+                    print(' ... arrived waypoint',store.destination)
+                    store.waypoints.pop(0)
+                    store.sendWaypointsUpdate()
+            
+            else: # hold station
+                store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
+                store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
+                print('hold: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge, len(store.waypoints))
                 
-            # go to the next waypoint 
-            if len(store.waypoints) > 0:
-  
-                store.destination = store.position
-
-            # course and distance to the next waypoint
-            store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
-            print('distance,bearing',store.distance, store.desiredcourse)
-            # back off on the thruster surge speed as we approach the waypoint
-            store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
-
-            # proceed to the next waypoint apon destination arrival
-            if len(store.waypoints) and store.distance < store.waypointarrivedradius:
-                print(' ... arrived waypoint',store.destination)
-                store.waypoints.pop(0)
-
-                if len(store.waypoints) == 0:
-                    # set the hold position
-                    store.destination = store.position
-                
-                store.sendWaypointsUpdate()
-
-            await gps.positionAvailable.wait()
-
+            #await gps.positionAvailable.wait()
+            await asyncio.sleep(2)
+                    
     except asyncio.CancelledError:
         print( "stopping autoTask" )
-
-           
-

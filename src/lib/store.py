@@ -37,7 +37,7 @@ class Store(object):
         self.distance = 0        # float meters : distance to desired posiiton
         self.desiredcourse = 0   # deg° of the desired heading
         self.waypoints = []      # [(str,str)] degree decimal 9 digit precision
-        self.waypointarrivedradius = 5 # waypoint arrived radius (meters)
+        self.waypointarrivedradius = 2 # waypoint arrived radius (meters)
         # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
         self.Kp = 1
@@ -199,6 +199,7 @@ class Store(object):
                     "position":self.position,
                     "currentcourse":int(self.currentcourse), 
                     "desiredcourse":int(self.desiredcourse),
+                    "distance":float(self.distance),
                     "gpscourse":int(self.gpscourse),
                     "gpsspeed":int(self.gpsspeed),
                     "magcourse":int(self.magcourse),

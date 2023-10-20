@@ -6,7 +6,7 @@ from lib.store import Store
 store = Store()
 
 class Stop(State):
-
+    'RoboBuoy is Stopped'
     def __init__( self ):
         self.name = 'stop'
 
@@ -23,22 +23,6 @@ class Stop(State):
     def transitionTo(self,statename):
         if (statename in ['manual','auto']): return statename        
 
-class Manual(State):
-
-    def __init__( self ):
-        self.name = 'manual'
-        self.driveTask=None
-
-    def start(self):
-        store.mode=self.name
-        store.desiredcourse = store.currentcourse
-        self.driveTask = asyncio.create_task( driveTask() )
-
-    def end(self):
-        self.driveTask.cancel()  
-
-    def transitionTo(self,statename):
-        if (statename in ['stop','auto']): return statename
 
 class Auto(State):
 
@@ -57,4 +41,23 @@ class Auto(State):
         self.driveTask.cancel()
 
     def transitionTo(self,statename):
-        if (statename in ['stop','manual']): return statename                 
+        if (statename in ['stop','manual']): return statename     
+
+class Manual(State):
+
+    def __init__( self ):
+        self.name = 'manual'
+        self.driveTask=None
+
+    def start(self):
+        store.mode=self.name
+        store.desiredcourse = store.currentcourse
+        self.driveTask = asyncio.create_task( driveTask() )
+
+    def end(self):
+        self.driveTask.cancel()  
+
+    def transitionTo(self,statename):
+        if (statename in ['stop','auto']): return statename
+
+            

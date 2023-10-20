@@ -88,15 +88,15 @@ def distancebearing(position_str,destination_str):
     For larger distances the Haversine formula would be needed
     '''
 
-    print('position_str',position_str)
+    #print('position_str',position_str)
     lat_p = convert_dd_int(position_str[0])
     lon_p = convert_dd_int(position_str[1])
-    print('lat_p,lon_p',lat_p,lon_p)
+    #print('lat_p,lon_p',lat_p,lon_p)
 
-    print('destination_str',destination_str)
+    #print('destination_str',destination_str)
     lat_d = convert_dd_int(destination_str[0])
     lon_d = convert_dd_int(destination_str[1])
-    print('lat_d,lon_d',lat_d,lon_d)
+    #print('lat_d,lon_d',lat_d,lon_d)
 
     dy = lat_d-lat_p # delta latitude
     dx = lon_d-lon_p # delta longitude
