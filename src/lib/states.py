@@ -1,9 +1,14 @@
 import uasyncio as asyncio
 from lib.statemachine import State 
 from lib.motors import driveTask
-from lib.auto import autoTask
+from lib.auto import autoTask, holdTask
 from lib.store import Store
 store = Store()
+
+# Unused Movement States : Adrift, underWay, afloat, aground, obstacle ahead, ahoy, alongside, anchored, ashore, capsize,
+# Unused Indication States : beaconing, bell
+# Events: collusion
+
 
 class Stop(State):
     'RoboBuoy is Stopped'
@@ -21,7 +26,7 @@ class Stop(State):
         print('stop state exit')
 
     def transitionTo(self,statename):
-        if (statename in ['manual','auto']): return statename        
+        if (statename in ['manual','hold','auto']): return statename        
 
 
 class Auto(State):
@@ -41,7 +46,26 @@ class Auto(State):
         self.driveTask.cancel()
 
     def transitionTo(self,statename):
-        if (statename in ['stop','manual']): return statename     
+        if (statename in ['stop','manual','hold']): return statename     
+
+class Hold(State):
+
+    def __init__( self ):
+        self.name = 'hold'
+        self.driveTask = None
+        self.holdTask  = None
+       
+    def start(self):
+        store.mode=self.name
+        self.driveTask = asyncio.create_task( driveTask() )
+        self.autoTask = asyncio.create_task( holdTask() )
+
+    def end(self):
+        self.holdTask.cancel()
+        self.driveTask.cancel()
+
+    def transitionTo(self,statename):
+        if (statename in ['stop','manual','auto']): return statename          
 
 class Manual(State):
 
@@ -58,6 +82,6 @@ class Manual(State):
         self.driveTask.cancel()  
 
     def transitionTo(self,statename):
-        if (statename in ['stop','auto']): return statename
+        if (statename in ['stop','hold','auto']): return statename
 
             

@@ -5,8 +5,12 @@ from lib.store import Store
 store = Store()
 
 # PWM control of ESC motor controlers 
-motorLeft = PWM(Pin(16))
-motorRight = PWM(Pin(17))
+motorLeft = PWM(Pin(2))
+motorRight = PWM(Pin(13))
+
+#motorLeft = PWM(Pin(16))
+#motorRight = PWM(Pin(17))
+
 motorLeft.freq(50)
 motorRight.freq(50)
 motorLeft.duty(0)

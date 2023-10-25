@@ -5,7 +5,7 @@ from lib import course
 from lib.gps import GPS
 from lib.motors import armMotorsCoroutine
 from lib.statemachine import StateMachine
-from lib.states import Stop, Manual, Auto
+from lib.states import Stop, Manual, Hold, Auto
 
 # use store and gps singleton instances
 store = Store()
@@ -30,8 +30,10 @@ async def mainTaskLoop():
     sm = StateMachine()
     sm.addState(Stop())
     sm.addState(Manual())
+    sm.addState(Hold())
     sm.addState(Auto())
     sm.setState('stop')
+    # recives mode change commands
     server.addListener('mode',sm.transitionTo)
 
      # Arm the motors 
