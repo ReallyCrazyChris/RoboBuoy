@@ -58,7 +58,7 @@ class Hold(State):
     def start(self):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
-        self.autoTask = asyncio.create_task( holdTask() )
+        self.holdTask = asyncio.create_task( holdTask() )
 
     def end(self):
         self.holdTask.cancel()

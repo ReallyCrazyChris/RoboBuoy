@@ -80,7 +80,7 @@ class GPS(object):
                
                 #read the gps sentense for the uart
                 gpssentence = gpsuart.readline()
-       
+                
                 if gpssentence != None:
                     self.parsesentence( gpssentence )
 
@@ -145,7 +145,7 @@ class GPS(object):
 
                 store.position = (latitude, longitude)
                 store.positionvalid = True
-                #print(store.position,store.positionvalid)
+                print(store.position,store.positionvalid)
                 self.positionAvailable.set()
                 
             except ValueError:

@@ -18,7 +18,7 @@ class Store(object):
             
         # Information
         self.number = 1     #Mark Number
-        self.color= "green" #Primary Color of the Mark
+        self.color= "green-13" #Primary Color of the Mark Chartreuse
         self.name = "Mark"  #Name of the RoboBupy in the APP
         self.mode = "stop"  #Current operational mode of the RoboBouy  ['stop','manual','auto']
         # Battery
