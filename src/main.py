@@ -5,7 +5,7 @@ from lib import course
 from lib.gps import GPS
 from lib.motors import armMotorsCoroutine
 from lib.statemachine import StateMachine
-from lib.states import Stop, Manual, Hold, Auto
+from lib.states import Stop, Manual, Hold, Auto, CalibrateMag
 
 # use store and gps singleton instances
 store = Store()
@@ -32,6 +32,7 @@ async def mainTaskLoop():
     sm.addState(Manual())
     sm.addState(Hold())
     sm.addState(Auto())
+    sm.addState(CalibrateMag())
     sm.setState('stop')
     # recives mode change commands
     server.addListener('mode',sm.transitionTo)

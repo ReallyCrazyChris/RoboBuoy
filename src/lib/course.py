@@ -57,7 +57,7 @@ async def fuseCompassTask():
             store.magcourse = imu.readMagHeading()
             if store.magalpha > 0:
                 # read magnetic compass heading
-                currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * store.magcourse
+                currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * (store.magcourse + store.magdeclination)
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
             await asyncio.sleep_ms(100)  
            
@@ -75,13 +75,14 @@ async def fuseGpsTask():
             await gps.courseAvailable.wait()
 
             # update the currentcourse based on the latest gps cource
-            if store.gpsalpha > 0 and store.gpsspeed >= 1:# must be moving for the gpscource to be valid           
+            if store.gpsalpha > 0 and store.gpsspeed >= 1:# must be moving for the gpscourse to be valid           
                 # Complementary filter strongly weighted towards the gps
                 currentcourse = (1.0 - store.gpsalpha) * store.currentcourse + store.gpsalpha * store.gpscourse
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
 
-            # update the compass declination based on the latest gps cource
+            # update the compass declination based on the latest gps course
             if store.declinationalpha > 0 and store.gpsspeed >= 1:
+                # Complementary filter strongly weighted towards the magdeclination
                 declination =  (1.0 - store.declinationalpha) * store.magdeclination + ( store.declinationalpha * (store.gpscourse - store.magcourse)  )
                 store.magdeclination = normalize(declination,-180,180)
 

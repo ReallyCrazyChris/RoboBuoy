@@ -8,15 +8,12 @@ from math import atan2, degrees, sqrt, radians
 
 from lib.i2c import i2c
 
-
-
 class IMU(object):
     '''
     Class provides 9-DOF IMU sensor information for the MPU9250
     North-East-Down(NED) as a fixed, parent coordinate system
 
     TODO: Consider correcting the accel and gyro NED frame using the mpu9250 mounting matrix capabiilty
-    TODO: Persist and Restore the constants
     '''
 
     _instance = None # is a singleton
@@ -58,14 +55,6 @@ class IMU(object):
         #Load saved calibration data
         self.load()
 
-        server.addListener('calibrateGyro',self.calibrateGyro)
-        server.addListener('calibrateAccel',self.calibrateAccel)
-        server.addListener('calibrateMag',self.calibrateMag)
-
-  
-
-
-
     #Accelerometer
     def accelfullScaleRange( self, fullScaleRange=0 ):
         '''
@@ -96,34 +85,6 @@ class IMU(object):
         z = -1 * z / self.accelSSF
 
         return x,y,z
-
-
-    def meanAccel( self, samples=10, delay=10):
-        """
-        creates accelerometer averaged value sof a number of samles with a 
-        sample interval
-        
-        """
-        ox, oy, oz = 0.0, 0.0, 0.0
-        n = float(samples)
-
-        while samples:
-            utime.sleep_ms(delay)
-            gx, gy, gz = self.readAccel()
-            ox += gx
-            oy += gy
-            oz += gz
-            samples -= 1
-
-        # mean accel values
-        ox,oy,oz = ox / n, oy / n, oz / n
-
-        return ox,oy,oz  
-
-    def calibrateAccel( self, samples=10, delay=10 ):
-        ''' Save the accel mean as the accel bias to the imu store'''
-        self.accelbias = self.meanAccel( samples, delay )
-
 
 
     def readCalibractedAccel(self):
@@ -172,30 +133,6 @@ class IMU(object):
         z = -1 * z
 
         return x,y,z         
-
-    def meanGyro( self, samples=10, delay=10 ):
-        
-        ox, oy, oz = 0.0, 0.0, 0.0
-        n = float(samples)
-
-        while samples:
-            utime.sleep_ms(delay)
-            gx, gy, gz = self.readGyro()
-            ox += gx
-            oy += gy
-            oz += gz
-            samples -= 1
-
-        # mean gyro values
-        ox,oy,oz = ox / n, oy / n, oz / n
-
-        return ox,oy,oz  
-
-    def calibrateGyro( self, samples=10, delay=10 ):
-        ''' Saves the Gyro mean as the Gyro bias to the imu store'''
-        self.gyrobias = self.meanGyro( samples, delay )
-
-
 
     def readCalibractedGyro(self):
         ''' apply the calibrated accel bias to the raw accel values'''
@@ -265,67 +202,7 @@ class IMU(object):
         x,y,_ = self.readMag( self.magbias )
         return int(degrees(atan2(x,y)))
 
-    def calibrateMag( self, samples, delay ):
-        '''
-        Creates a tuple of magbias and saves this to the imu store
-        During the calibration rotate the gyro in all directions
-        '''
-
-        samples = int(samples) or 800
-        delay = int(delay) or 10
-
-        print("calibrate magnetmeter, place the robo bouy in the water add rotate it ")
-        minx = 0
-        maxx = 0
-        miny = 0
-        maxy = 0
-        minz = 0
-        maxz = 0
-
-        while samples :
-
-            samples = samples - 1
-            try:
-                x,y,z = self.readMag()  
-                minx = min(x,minx)
-                maxx = max(x,maxx)
-                miny = min(y,miny)
-                maxy = max(y,maxy)
-                minz = min(z,minz)
-                maxz = max(z,maxz)
-            except Exception:
-                pass
-        
-            print(x,y,z)
-            utime.sleep_ms(delay)
-
-        cx = (maxx + minx) / 2
-        cy = (maxy + miny) / 2  
-        cz = (maxz + minz) / 2  
-
-        nx = abs(maxx - cx)
-        ny = abs(maxy - cy)
-        nz = abs(maxz - cz)
-
-        # Soft iron correction
-        avg_delta_x = (maxx - minx) / 2
-        avg_delta_y = (maxy - miny) / 2
-        avg_delta_z = (maxz - minz) / 2
-
-        avg_delta = (avg_delta_x + avg_delta_y + avg_delta_z) / 3
-        
-        sx = avg_delta / avg_delta_x
-        sy = avg_delta / avg_delta_y
-        sz = avg_delta / avg_delta_z
-
-        print("offset",cx,cy,cz)
-        print("normalisation",nx,ny,nz)
-        print("scale",sx,sy,sz)
-
-        self.magbias = (cx, cy, cz ,nx, ny, nz, sx, sy, sz) 
-        self.save()
-
-        return cx, cy, cz ,nx, ny, nz, sx, sy, sz
+    
 
     #Temperature Sensor
     def readTemp( self ):

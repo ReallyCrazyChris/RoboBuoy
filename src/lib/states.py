@@ -2,6 +2,7 @@ import uasyncio as asyncio
 from lib.statemachine import State 
 from lib.motors import driveTask
 from lib.auto import autoTask, holdTask
+
 from lib.store import Store
 store = Store()
 
@@ -25,8 +26,8 @@ class Stop(State):
         """Perform these actions when this state is exited."""
         print('stop state exit')
 
-    def transitionTo(self,statename):
-        if (statename in ['manual','hold','auto']): return statename        
+    def canTransitionTo(self,statename):
+        if (statename in ['manual','hold','auto','calibratemag']): return statename        
 
 
 class Auto(State):
@@ -45,7 +46,7 @@ class Auto(State):
         self.autoTask.cancel()
         self.driveTask.cancel()
 
-    def transitionTo(self,statename):
+    def canTransitionTo(self,statename):
         if (statename in ['stop','manual','hold']): return statename     
 
 class Hold(State):
@@ -64,7 +65,7 @@ class Hold(State):
         self.holdTask.cancel()
         self.driveTask.cancel()
 
-    def transitionTo(self,statename):
+    def canTransitionTo(self,statename):
         if (statename in ['stop','manual','auto']): return statename          
 
 class Manual(State):
@@ -81,7 +82,36 @@ class Manual(State):
     def end(self):
         self.driveTask.cancel()  
 
-    def transitionTo(self,statename):
+    def canTransitionTo(self,statename):
         if (statename in ['stop','hold','auto']): return statename
+
+
+class CalibrateMag(State):
+    ''' The Magnetic compass is calibrating'''
+
+    def __init__( self ):
+        self.name = 'calibratemag'
+        self.driveTask=None
+
+    def start(self):
+        store.mode=self.name
+        self.driveTask = asyncio.create_task( driveTask() )
+        # slow rotation on the robots axis
+        store.setsurge(0)  
+        store.setsteer(20) 
+        self.transitionTo('stop')
+
+    def action(self,statename):
+        ''' Calibrate the Magnetometer'''
+        #from lib.imu import IMU
+        #imu = IMU()
+        #imu.calibrateMag(800,10)
+
+
+    def end(self):
+        self.driveTask.cancel()  
+
+    def canTransitionTo(self,statename):
+        if (statename in ['stop']): return statename
 
             

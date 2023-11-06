@@ -16,7 +16,7 @@ class StateMachine(object):
         """
         if self.activeState is not None:
             self.activeState.action(data)
-        new_state_name = self.activeState.transitionTo(data)
+        new_state_name = self.activeState.canTransitionTo(data)
         if new_state_name is not None:
             self.setState(new_state_name)
 
@@ -25,6 +25,7 @@ class StateMachine(object):
         if self.activeState is not None:
             self.activeState.end()
         self.activeState = self.states[new_state_name]
+        print('start state',new_state_name)
         self.activeState.__start__()
 
 
@@ -41,7 +42,7 @@ class State(object):
         """Perform these actions when in this state."""
         pass
 
-    def transitionTo(self,statename):
+    def canTransitionTo(self,statename):
         """Check these conditions to see if state should be changed."""
         pass
 
