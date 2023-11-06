@@ -8,12 +8,14 @@ from math import atan2, degrees, sqrt, radians
 
 from lib.i2c import i2c
 
+class MagDataNotReady(Exception):
+    "Manetometer Not Ready for Reading"
+    pass
+
 class IMU(object):
     '''
     Class provides 9-DOF IMU sensor information for the MPU9250
     North-East-Down(NED) as a fixed, parent coordinate system
-
-    TODO: Consider correcting the accel and gyro NED frame using the mpu9250 mounting matrix capabiilty
     '''
 
     _instance = None # is a singleton
@@ -85,7 +87,6 @@ class IMU(object):
         z = -1 * z / self.accelSSF
 
         return x,y,z
-
 
     def readCalibractedAccel(self):
         ''' apply the calibrated accel bias to the raw accel values'''
@@ -177,7 +178,7 @@ class IMU(object):
         DRDY = self.i2c.readfrom_mem(0x0C, 0x02, 1)[0] & 0x01
  
         if DRDY != 0x01 : # Data is ready
-            raise Exception()
+            raise MagDataNotReady()
 
         x,y,z = unpack('<hhh',self.i2c.readfrom_mem(0x0C, 0x03, 6))  
 
@@ -202,7 +203,7 @@ class IMU(object):
         x,y,_ = self.readMag( self.magbias )
         return int(degrees(atan2(x,y)))
 
-    
+   
 
     #Temperature Sensor
     def readTemp( self ):

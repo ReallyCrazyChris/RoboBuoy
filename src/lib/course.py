@@ -2,7 +2,7 @@ import uasyncio as asyncio
 from lib import server
 from lib.store import Store
 from lib.utils import normalize, constrain
-from lib.imu import IMU
+from lib.imu import IMU, MagDataNotReady
 from lib.gps import GPS
 
 imu = IMU()
@@ -54,12 +54,16 @@ async def fuseCompassTask():
     try:
         print('starting fuseCompassTask')
         while True:
-            store.magcourse = imu.readMagHeading()
-            if store.magalpha > 0:
-                # read magnetic compass heading
-                currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * (store.magcourse + store.magdeclination)
-                store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
-            await asyncio.sleep_ms(100)  
+            try:
+                await asyncio.sleep_ms(100)  
+                store.magcourse = imu.readMagHeading()
+                if store.magalpha > 0:
+                    # read magnetic compass heading
+                    currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * (store.magcourse + store.magdeclination)
+                    store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+            except MagDataNotReady:
+                # TODO, magnetometer is a resource that needs to be managed by a lock
+                pass    
            
     except asyncio.CancelledError:
         print( "stopping fuseCompassTask" )

@@ -65,7 +65,7 @@ async def receiveTask():
             await bleuart.received_flag.wait()
             
     except asyncio.CancelledError:
-        pass 
+        print('stoping receiveTask') 
 
 async def sendTask():
     ''' reads messages from the server send queue and sends them via bluetooth '''
@@ -84,7 +84,7 @@ async def sendTask():
                 await asyncio.sleep_ms(200)          
 
     except asyncio.CancelledError:
-        pass     
+        print('stopping sendTask')     
 
 
 async def advertiseTask():
@@ -98,4 +98,4 @@ async def advertiseTask():
             bleuart.advertise()
             bleuart.lock.release()
     except asyncio.CancelledError:
-        pass    
+        print('stopping advertiseTask')    

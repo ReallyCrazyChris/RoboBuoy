@@ -1,12 +1,12 @@
 import uasyncio as asyncio
-from lib.imu import IMU
+from lib.imu import IMU, MagDataNotReady
 imu = IMU()
 
 ########################################
 # Calibrate Magnetometer Async Task
 ########################################
 
-async def calibrateMag(samples:int=800,delay:int=10) -> tuple:
+async def calibrateMagTask(samples:int=800,delay:int=10) -> tuple:
     '''
     create magnetometer bias, normailization and scaling
     this is perferformed while the magnetomer is rotating around all axes
@@ -26,19 +26,21 @@ async def calibrateMag(samples:int=800,delay:int=10) -> tuple:
 
         # collect minimum and maximum magnetometer samples
         while samples :
-
-            samples = samples - 1
-           
-            x,y,z = imu.readMag()  
- 
-            minx = min(x,minx)
-            maxx = max(x,maxx)
-            miny = min(y,miny)
-            maxy = max(y,maxy)
-            minz = min(z,minz)
-            maxz = max(z,maxz)
-
-            await asyncio.sleep_ms(delay)
+            try:
+                await asyncio.sleep_ms(delay)
+            
+                x,y,z = imu.readMag()  
+                samples = samples - 1
+                minx = min(x,minx)
+                maxx = max(x,maxx)
+                miny = min(y,miny)
+                maxy = max(y,maxy)
+                minz = min(z,minz)
+                maxz = max(z,maxz)
+            
+            except MagDataNotReady:
+                pass
+                
 
         # Average
         cx = (maxx + minx) / 2
@@ -80,7 +82,7 @@ async def calibrateMag(samples:int=800,delay:int=10) -> tuple:
 # Calibrate Accelerometer Task
 ########################################
 
-async def calibrateAccel(samples:int=100,delay:int=10) -> tuple:
+async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
     ''' creates accelerometer averaged values for biasing the accelerometer at rest'''
         
     try:
@@ -115,7 +117,7 @@ async def calibrateAccel(samples:int=100,delay:int=10) -> tuple:
 # Calibrate Gyro Task
 ########################################
 
-async def calibrateGyro( samples:int=100, delay:int=10 ) -> tuple:
+async def calibrateGyroTask( samples:int=100, delay:int=10 ) -> tuple:
     ''' creates gyro averaged values for biasing the gyro at rest '''        
     try:
         print('starting calibrateAccelTask')        
@@ -124,7 +126,7 @@ async def calibrateGyro( samples:int=100, delay:int=10 ) -> tuple:
 
         while samples:
             await asyncio.sleep_ms(delay)
-            gx, gy, gz = self.readGyro()
+            gx, gy, gz = imu.readGyro()
             ox += gx
             oy += gy
             oz += gz
