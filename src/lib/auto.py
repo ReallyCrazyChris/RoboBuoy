@@ -4,17 +4,17 @@
     holds the current station (position)
 '''
 import uasyncio as asyncio
-from lib import server
+
 from lib.utils import distancebearing
-from lib.imu import IMU
 from lib.gps import GPS
 from lib.store import Store
-
 store = Store()
-imu = IMU()
 gps = GPS()
 
 async def autoTask():
+    ''' 
+    Automatically follows a waypoints
+    '''
     try: 
         print('starting autoTask')
 
@@ -39,22 +39,24 @@ async def autoTask():
             else: # when there are no more waypoint to follow : hold station
                 store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
                 store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
-                print('hold after auto: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge, len(store.waypoints))
+                print('auto-hold: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge, len(store.waypoints))
                 
             await gps.positionAvailable.wait()
-            #await asyncio.sleep(2)
                     
     except asyncio.CancelledError:
         print( "stopping autoTask" )
 
 
 async def holdTask():
+    '''
+    Holds the current station (position)
+    '''
     try: 
         print('starting holdTask')
 
         await gps.positionAvailable.wait()
   
-        # assume tht we hold station first    
+        # assume that we hold station first    
         store.destination = store.position
 
         while True:

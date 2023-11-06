@@ -5,13 +5,12 @@ bleuart = BLEUART()
 bleuartLock = asyncio.Lock() # async lock to prevent multiple communication actions at the same time
 
 listeners = {}
-sendqueue = []
-receivequeue = []
+sendqueue = [] # of messages to be sent
+receivequeue = [] # of messages that have been received
     
-def messageHandler(message):
-
+def messageHandler(message:list):
+    
     if not len( message ) >= 1: return
-
     name = str(message[0])
 
     if name in listeners.keys():
@@ -19,10 +18,10 @@ def messageHandler(message):
     else:
         raise Exception('no listener for event',name) 
 
-def addListener(name, handler):
+def addListener(name:str, handler:function):
     listeners[name] = handler
     
-def removeListener(name):
+def removeListener(name:str):
     del listeners[name]
 
 def send(*packet):
@@ -35,7 +34,7 @@ def receive(packet):
     receivequeue.append(packet)
 
 def react():
-    """ processed the commands in the receivequeue as a task in the asyncio loop"""
+    """ processed the commands in the receivequeue"""
 
     while len(receivequeue):
 

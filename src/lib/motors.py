@@ -17,21 +17,16 @@ motorLeft.duty(0)
 motorRight.duty(0)   
         
 async def armMotorsCoroutine():
-    ''' arm esc motor controllers '''
-    try:
-        print('starting armMotorsTask')
-            
-        motorLeft.duty(40)
-        motorRight.duty(40)
-        await asyncio.sleep_ms(3000) 
-        motorLeft.duty(115)
-        motorRight.duty(115)
-        await asyncio.sleep_ms(3000) 
-        motorLeft.duty(0)
-        motorRight.duty(0) 
+    ''' arm esc motor controllers '''     
+    motorLeft.duty(40)
+    motorRight.duty(40)
+    await asyncio.sleep_ms(1000) 
+    motorLeft.duty(115)
+    motorRight.duty(115)
+    await asyncio.sleep_ms(1000) 
+    motorLeft.duty(0)
+    motorRight.duty(0) 
 
-    except asyncio.CancelledError:
-        print( "stopping armMotorsTask") 
 
 async def driveTask():
     ''' drive motors (steer in degrees -180..180 , surge in cm/s) '''

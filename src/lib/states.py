@@ -1,6 +1,6 @@
 import uasyncio as asyncio
 from lib.statemachine import State 
-from lib.motors import driveTask
+from lib.motors import armMotorsCoroutine,driveTask
 from lib.auto import autoTask, holdTask
 from lib.imutasks import calibrateMagTask
 
@@ -10,6 +10,22 @@ store = Store()
 # Unused Movement States : Adrift, underWay, afloat, aground, obstacle ahead, ahoy, alongside, anchored, ashore, capsize,
 # Unused Indication States : beaconing, bell
 # Events: collusion
+
+class Init(State):
+    ''' Initial State'''
+    def __init__( self, sm ):
+        self.name = 'init'
+        self.sm = sm #statemachine
+
+    async def start(self):
+        store.mode=self.name
+        # arm the motors
+        await armMotorsCoroutine()
+        # go to state
+        self.sm.transitionTo('stop')
+
+    def canTransitionTo(self,statename):
+        if (statename in ['stop']): return statename
 
 
 class Stop(State):
@@ -44,7 +60,6 @@ class Auto(State):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
         self.autoTask = asyncio.create_task( autoTask() )
-
 
     def end(self):
         self.autoTask.cancel()

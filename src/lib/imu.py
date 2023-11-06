@@ -2,14 +2,13 @@
 Micropython driver for the I2C MPU9250 9-DOF Sensor
 """
 import utime
-import lib.server as server
 from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
 
 from lib.i2c import i2c
 
 class MagDataNotReady(Exception):
-    "Manetometer Not Ready for Reading"
+    "Possible race condition in reading magnetometer"
     pass
 
 class IMU(object):
