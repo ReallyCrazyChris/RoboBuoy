@@ -26,13 +26,13 @@ async def mainTaskLoop():
     asyncio.create_task( course.fuseCompassTask() )
     asyncio.create_task( course.fuseGpsTask() )
     
-    # Statemachine to manage the robots operational modes aka transition states
+    # Statemachine to manage the robots operational modes aka states
     sm = StateMachine()
-    sm.addState(Stop())
-    sm.addState(Manual())
-    sm.addState(Hold())
-    sm.addState(Auto())
-    sm.addState(CalibrateMag())
+    sm.addState(Stop)
+    sm.addState(Manual)
+    sm.addState(Hold)
+    sm.addState(Auto)
+    sm.addState(CalibrateMag)
     sm.setState('stop')
     # recives mode change commands
     server.addListener('mode',sm.transitionTo)

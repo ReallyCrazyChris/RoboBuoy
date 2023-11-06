@@ -2,6 +2,7 @@ import uasyncio as asyncio
 from lib.statemachine import State 
 from lib.motors import driveTask
 from lib.auto import autoTask, holdTask
+from lib.imutasks import calibrateMagTask
 
 from lib.store import Store
 store = Store()
@@ -13,8 +14,9 @@ store = Store()
 
 class Stop(State):
     'RoboBuoy is Stopped'
-    def __init__( self ):
+    def __init__( self, sm ):
         self.name = 'stop'
+        self.sm = sm #statemachine
 
     def start(self):
         """Perform these actions when this state is first entered."""
@@ -32,8 +34,9 @@ class Stop(State):
 
 class Auto(State):
 
-    def __init__( self ):
+    def __init__( self ,sm):
         self.name = 'auto'
+        self.sm = sm #statemachine
         self.driveTask = None
         self.autoTask  = None
        
@@ -41,6 +44,7 @@ class Auto(State):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
         self.autoTask = asyncio.create_task( autoTask() )
+
 
     def end(self):
         self.autoTask.cancel()
@@ -51,8 +55,9 @@ class Auto(State):
 
 class Hold(State):
 
-    def __init__( self ):
+    def __init__( self ,sm ):
         self.name = 'hold'
+        self.sm = sm #statemachine
         self.driveTask = None
         self.holdTask  = None
        
@@ -70,8 +75,9 @@ class Hold(State):
 
 class Manual(State):
 
-    def __init__( self ):
+    def __init__( self ,sm ):
         self.name = 'manual'
+        self.sm = sm #statemachine
         self.driveTask=None
 
     def start(self):
@@ -89,27 +95,28 @@ class Manual(State):
 class CalibrateMag(State):
     ''' The Magnetic compass is calibrating'''
 
-    def __init__( self ):
+    def __init__( self, sm ):
         self.name = 'calibratemag'
+        self.sm = sm #statemachine
         self.driveTask=None
+        self.calibrateMagTask=None
 
-    def start(self):
+    async def start(self):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
+
         # slow rotation on the robots axis
         store.setsurge(0)  
         store.setsteer(20) 
-        self.transitionTo('stop')
+        
+        # claibrate
+        await calibrateMagTask()
 
-    def action(self,statename):
-        ''' Calibrate the Magnetometer'''
-        #from lib.imu import IMU
-        #imu = IMU()
-        #imu.calibrateMag(800,10)
-
+        #return to sopt state
+        self.sm.transitionTo('stop')
 
     def end(self):
-        self.driveTask.cancel()  
+        self.driveTask.cancel()
 
     def canTransitionTo(self,statename):
         if (statename in ['stop']): return statename
