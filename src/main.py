@@ -1,5 +1,5 @@
 import uasyncio as asyncio
-from lib.store import Store
+from lib.storetasks import sendMotionMessageTask
 from lib import server
 from lib import course
 from lib.gps import GPS
@@ -8,9 +8,7 @@ from lib.statemachine import StateMachine
 from lib.states import Init, Stop, Manual, Hold, Auto, CalibrateMag
 
 # use store and gps singleton instances
-store = Store()
 gps = GPS()
-
 
 async def mainTaskLoop():
 
@@ -19,7 +17,7 @@ async def mainTaskLoop():
     asyncio.create_task( server.sendTask() )
     asyncio.create_task( server.advertiseTask() )
     asyncio.create_task( gps.readGpsTask() )
-    asyncio.create_task( store.sendMotionStateTask() )
+    asyncio.create_task( sendMotionMessageTask() )
 
     # Start the Tasks that keep the Robot on course
     asyncio.create_task( course.fuseGyroTask() )
@@ -38,8 +36,9 @@ async def mainTaskLoop():
     # recives mode change commands
     server.addListener('mode',sm.transitionTo)
 
-     # Arm the motors 
-    await armMotorsCoroutine()
+    #TODO I dont like this. it looks very pointless
+    import lib.storehandlers
+    import lib.storerequests
 
     # Keep the mainTaskLoop running forever    
     while 1:

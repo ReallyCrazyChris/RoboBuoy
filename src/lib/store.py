@@ -1,5 +1,6 @@
-import uasyncio as asyncio
-from lib import server
+##################################################### 
+# Singleton Store holing the  RoboBuoy's State
+#####################################################
 
 class Store(object):
 
@@ -13,14 +14,15 @@ class Store(object):
     def __init__( self ):
         
         ####################
-        # The RoboBuoy State
+        # The RoboBuoy Store 
         ####################
             
         # Information
         self.number = 1     #Mark Number
+        self.type = "mark"
+        self.name = "Einstein"  #Name of the RoboBupy in the APP
         self.color= "green-13" #Primary Color of the Mark Chartreuse
-        self.name = "Mark"  #Name of the RoboBupy in the APP
-        self.mode = "stop"  #Current operational mode of the RoboBouy  ['stop','manual','auto']
+        self.mode = "stop"  #Current operational mode of the RoboBouy  ['stop','manual','auto',...]
         # Battery
         self.battery = 35   # % Capacity of battery remaining
         # Position, Course & Speed
@@ -50,7 +52,6 @@ class Store(object):
         self.lastErr = 0  # Previous error
         
         # Complimentary Filter : How much trust is given in the GPS and Compass Readings 
-        
         self.gpsalpha = 0.97  # % trust in the gps course
         self.magalpha = 0.00  # % trust in the compass course
         self.declinationalpha = 0.00 # % we trust in the gps to calculate the magnetic declination
@@ -64,271 +65,372 @@ class Store(object):
         self.mpr = 55  #  right pwm value where the motor starts to turn
         self.maxpwm = 110 # maximum pwm signal sent to the motors
 
-        ###################
-        # Command Listeners
-        # coming from the RoboBouyAPP
-        # #################
-               
-        # Send RoboBouyAPP relevant state       
-        server.addListener('getState',self.getState)
+    @property
+    def number(self):
+        return self._number
 
-        # Information
-        server.addListener('number',self.setnumber)
-        server.addListener('color',self.setcolor)
-        server.addListener('name',self.setname)
+    @number.setter
+    def number(self, value):
+        self._number = int(value)
 
-        # AutonomousPathfinding Listeners
-        server.addListener('dc',self.setdesiredcourse)                
-        server.addListener('wp',self.setwaypoints)
-        server.addListener('wr',self.setwaypointarrivedradius)
+    @property
+    def type(self):
+        return self._type
 
-        # Steering PID Listeners
-        server.addListener('Kp',self.setKp)
-        server.addListener('Ki',self.setKi)
-        server.addListener('Kd',self.setKd)
-        
-        # Complimentary Filter Listeners
-        server.addListener('magalpha',self.setmagalpha)
-        server.addListener('gpsalpha',self.setgpsalpha)
-        server.addListener('declinationalpha',self.setdeclinationalpha)
+    @type.setter
+    def type(self, value):
+        self._type = str(value)
 
-        # Motor State Listeners
-        server.addListener('surge',self.setsurge)
-        server.addListener('vmin',self.setvmin)
-        server.addListener('vmax',self.setvmax)
-        server.addListener('steergain',self.setsteergain)
-        server.addListener('mpl',self.setmpl)
-        server.addListener('mpr',self.setmpr)
+    @property
+    def name(self):
+        return self._name
 
-        # Persistance Command Listeners
-        server.addListener('savesettings',self.savesettings)
-        server.addListener('loadsettings',self.loadsettings)
+    @name.setter
+    def name(self, value):
+        self._name = str(value)
 
-        # Request Listeners
-        server.addListener('getPIDsettings', self.getPIDsettings)
-        server.addListener('getMotorsettings', self.getMotorsettings)
-        server.addListener('getAlphasettings', self.getAlphasettings)    
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, value):
+        self._color = str(value)
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        self._mode = str(value)
+
+    @property
+    def battery(self):
+        return self._battery
+
+    @battery.setter
+    def battery(self, value):
+        self._battery = int(value)
+
+    @property
+    def positionvalid(self):
+        return self._positionvalid
+
+    @positionvalid.setter
+    def positionvalid(self, value):
+        self._positionvalid = bool(value)
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, value):
+        self._position = tuple(value)
+                              
+
+    @property
+    def gpscourse(self):
+        return self._gpscourse
+
+    @gpscourse.setter
+    def gpscourse(self, value):
+        self._gpscourse = int(value)
+
+    @property
+    def gpsspeed(self):
+        return self._gpsspeed
+
+    @gpsspeed.setter
+    def gpsspeed(self, value):
+        # limit the float to 2 decimal places
+        # its easier to present and higher precisio is not required
+        self._gpsspeed = round(float(value),2)
+
+    @property
+    def magcourse(self):
+        return self._magcourse
+
+    @magcourse.setter
+    def magcourse(self, value):
+        self._magcourse = int(value)
+
+    @property
+    def magdeclination(self):
+        return self._magdeclination
+
+    @magdeclination.setter
+    def magdeclination(self, value):
+        self._magdeclination = int(value)
+
+    @property
+    def currentcourse(self):
+        return self._currentcourse
+
+    @currentcourse.setter
+    def currentcourse(self, value):
+        self._currentcourse = int(value)
+
+    @property
+    def destination(self):
+        return self._destination
+
+    @destination.setter
+    def destination(self, value):
+        self._destination = tuple(value)
+
+    @property
+    def distance(self):
+        return self._distance
+
+    @distance.setter
+    def distance(self, value):
+        self._distance = float(value)
+
+    @property
+    def desiredcourse(self):
+        return self._desiredcourse
+
+    @desiredcourse.setter
+    def desiredcourse(self, value):
+        self._desiredcourse = int(value)
+
+    @property
+    def waypoints(self):
+        return self._waypoints
+
+    @waypoints.setter
+    def waypoints(self, value):
+        self._waypoints = list(value)
+
+    @property
+    def waypointarrivedradius(self):
+        return self._waypointarrivedradius
+
+    @waypointarrivedradius.setter
+    def waypointarrivedradius(self, value):
+        self._waypointarrivedradius = int(value)
+
+    @property
+    def Kp(self):
+        return self._Kp
+
+    @Kp.setter
+    def Kp(self, value):
+        self._Kp = float(value)
+
+    @property
+    def Ki(self):
+        return self._Ki
+
+    @Ki.setter
+    def Ki(self, value):
+        self._Ki = float(value)
+
+    @property
+    def Kd(self):
+        return self._Kd
+
+    @Kd.setter
+    def Kd(self, value):
+        self._Kd = float(value)
+
+    @property
+    def gpsalpha(self):
+        return self._gpsalpha
+
+    @gpsalpha.setter
+    def gpsalpha(self, value):
+        self._gpsalpha = float(value)
+
+    @property
+    def magalpha(self):
+        return self._magalpha
+
+    @magalpha.setter
+    def magalpha(self, value):
+        self._magalpha = float(value)
+
+    @property
+    def declinationalpha(self):
+        return self._declinationalpha
+
+    @declinationalpha.setter
+    def declinationalpha(self, value):
+        self._declinationalpha = float(value)
+
+    @property
+    def surge(self):
+        return self._surge
+
+    @surge.setter
+    def surge(self, value):
+        self._surge = int(value)
+
+    @property
+    def steer(self):
+        return self._steer
+
+    @steer.setter
+    def steer(self, value):
+        self._steer = int(value)
 
 
-    ##############################
-    # Setters ( old school style )
-    ##############################
-    # TODO create guards for the value setters
-    # RoboBuoy Information Setters
-    def setnumber(self,val):
-        self.number = int(val)
-    def setcolor(self,val):
-        self.color = val 
-    def setname(self,val):
-        self.name = val 
-    def setmode(self,val):
-        self.mode = val 
-    # Battery Setters
-    def setbattery(self,val):
-        self.battery = int(val)
-    # Position Setters
-    def setpositionvalid(self,val):
-        self.positionvalid = bool(val)  
-    def setposition(self,val):
-        self.position = val 
-    def setgpsspeed(self,val):
-        self.gpsspeed = int(val)
-    def setgpscourse(self,val):
-        self.gpscourse = int(val)                  
-    # Course
-    def setcurrentcourse(self,val):
-        self.currentcourse = int(val)    
-    # AutonomousPathfinding
-    def setdestination(self,val):
-        self.destination = val 
-    def setdistance(self,val):
-        self.distance = int(val)
-    def setdesiredcourse(self,val):
-        self.desiredcourse = int(val)
-    def setwaypoints(self,val):
-        print(val)
-        self.waypoints = val 
-    def setwaypointarrivedradius(self,val):
-        self.waypointarrivedradius = int(val) 
-    # PID Setters - use setters to set the state
-    def setKp(self,val):
-        self.Kp = float(val) 
-    def setKi(self,val):
-        self.Ki = float(val) 
-    def setKd(self,val):
-        self.Kd = float(val) 
-    # Complementary filter Setters - use setters to set the state
-    def setmagalpha(self,val):
-        self.magalpha = float(val) 
-    def setgpsalpha(self,val):
-        self.gpsalpha = float(val) 
-    def setdeclinationalpha(self,val):
-        self.declinationalpha = float(val)         
-    # Motor Setters - use setters to set the state 
-    def setsurge(self,val):
-        self.surge = int(val) 
-    def setsteer(self,val):
-        self.steer = int(val) 
-    def setvmin(self,val):
-        self.vmin = int(val) 
-    def setvmax(self,val):
-        print('setvmax',val)
-        self.vmax = int(val) 
-    def setsteergain(self,val):
-        self.steergain = int(val) 
-    def setmpl(self,val):
-        self.mpl = int(val)
-    def setmpr(self,val):
-        self.mpr = int(val)
-    def setmaxpwm(self,val):
-        self.maxpwm = int(val)    
+    @property
+    def vmin(self):
+        return self._vmin
 
-    ##################################################### 
-    # Tasks that update the RoboBuoyAPP State
-    #####################################################
-    
-    async def sendMotionStateTask(self):
-        ''' continously sends motion parameters to the RoboBouyApp '''
-        try:
-            print('starting sendMotionStateTask')
-            while True:
-                await asyncio.sleep_ms(1000)  
-                state = {
-                    "mode":self.mode,
-                    "positionvalid":bool(self.positionvalid),
-                    "position":self.position,
-                    "currentcourse":int(self.currentcourse), 
-                    "desiredcourse":int(self.desiredcourse),
-                    "distance":float(self.distance),
-                    "gpscourse":int(self.gpscourse),
-                    "gpsspeed":int(self.gpsspeed),
-                    "magcourse":int(self.magcourse),
-                    "magdeclination":int(self.magdeclination),
-                    "surge":int(self.surge),                
-                }
-                server.send('state',state)
-        except asyncio.CancelledError:
-            print( "stopping sendMotionStateTask")
-
-    def sendWaypointsUpdate(self):
-        ''' send a waypoints update '''
-        state = {
-            "waypoints":self.waypoints,
-            "waypointarrivedradius":self.waypointarrivedradius,
-        }
-        server.send('state',state)
+    @vmin.setter
+    def vmin(self, value):
+        self._vmin = int(value)
 
 
-    ##################
-    # Request Handlers
-    ##################
-    def getState(self):
-        ''' send the state to the RoboBouyApp in chunks '''
-        
-        stateA = {
-            "number":self.number,
-            "name":self.name,
-            "color":self.color,
-            "mode":self.mode,
-            "battery":self.battery,
-        }
-        stateB = {
-            "waypoints":self.waypoints,
-            "waypointarrivedradius":self.waypointarrivedradius,
-        }
-        stateC = {    
-            "Kp":self.Kp, 
-            "Ki":self.Ki, 
-            "Kd":self.Kd,
-            "magalpha":self.magalpha, 
-            "gpsalpha":self.gpsalpha,
-            "declinationalpha":self.declinationalpha
-        }
-        stateD = {                 
-            "vmin":self.vmin, 
-            "vmax":self.vmax, 
-            "steergain":self.steergain, 
-            "mpl":self.mpl, 
-            "mpr":self.mpr, 
-            "maxpwm":self.maxpwm, 
-        }
+    @property
+    def vmax(self):
+        return self._vmax
 
-        # send state in chunks
-        server.send('state',stateA)
-        server.send('state',stateB)
-        server.send('state',stateC)
-        server.send('state',stateD)
+    @vmax.setter
+    def vmax(self, value):
+        self._vmax = int(value)
 
-    def getPIDsettings(self):
-        ''' send the state to the RoboBouyApp '''
-        state = {
-            "Kp":float(self.Kp), 
-            "Ki":float(self.Ki), 
-            "Kd":float(self.Kd)
-        }
-        server.send('state',state)
+    @property
+    def steergain(self):
+        return self._steergain
 
-    def getMotorsettings(self):
-        ''' send the state to the RoboBouyApp '''
-        state = {    
-            "surge":int(self.surge), 
-            "vmin":int(self.vmin), 
-            "vmax":int(self.vmax), 
-            "steergain":int(self.steergain), 
-            "mpl":int(self.mpl),
-            "mpr":int(self.mpr),
-            "maxpwm":int(self.maxpwm)
-        }
-        server.send('state',state)        
+    @steergain.setter
+    def steergain(self, value):
+        self._steergain = int(value)
 
-    def getAlphasettings(self):
-        ''' send the state to the RoboBouyApp '''
-        state = {    
-            "gpsalpha":float(self.gpsalpha), 
-            "magalpha":float(self.magalpha), 
-            "declinationalpha":float(self.declinationalpha)
-        }
-        server.send('state',state)  
-        
-    ######################
-    # Persistance Commands
-    ######################
-    def savesettings(self):
-        """write store to flash"""
-        import json
-        print('save state to flash')
-        with open('store.json', 'w') as file:
+    @property
+    def mpl(self):
+        return self._mpl
 
-            state = {
-                "number":self.number,
-                "name":self.name,
-                "color":self.color,
-                "waypoints":self.waypointarrivedradius,
-                "waypointarrivedradius":self.waypointarrivedradius,
-                "Kp":self.Kp, 
-                "Ki":self.Ki, 
-                "Kd":self.Kd,
-                "gpsalpha":self.gpsalpha,
-                "magalpha":self.magalpha,
-                "magdeclination":self.magdeclination, 
-                "declinationalpha":self.declinationalpha,
-                "vmin":self.vmin, 
-                "vmax":self.vmax, 
-                "steergain":self.steergain, 
-                "mpl":self.mpl, 
-                "mpr":self.mpr, 
-                "maxpwm":self.maxpwm, 
-            }
+    @mpl.setter
+    def mpl(self, value):
+        self._mpl = int(value)
 
-            json.dump(state, file)
+    @property
+    def mpr(self):
+        return self._mpr
 
-    def loadsettings(self):
-        """load store state from flash"""
-        import json
-        print('load store from flash') 
-        try:
-            with open('store.json', 'r') as file:
-                state = json.load(file) 
-                self.__dict__.update(state)
-        except Exception :
-            pass
+    @mpr.setter
+    def mpr(self, value):
+        self._mpr = int(value)
+
+    @property
+    def maxpwm(self):
+        return self._maxpwm
+
+    @maxpwm.setter
+    def maxpwm(self, value):
+        self._maxpwm = int(value)
+
+
+    def set_number(self, value):
+        self.number = value
+
+    def set_type(self, value):
+        self.type = value
+
+    def set_name(self, value):
+        self.name = value
+
+    def set_color(self, value):
+        self.color = value
+
+    def set_mode(self, value):
+        self.mode = value
+
+    def set_battery(self, value):
+        self.battery = value
+
+    def set_positionvalid(self, value):
+        self.positionvalid = value
+
+    def set_position(self, value):
+        self.position = value
+
+    def set_gpscourse(self, value):
+        self.gpscourse = value
+
+    def set_gpsspeed(self, value):
+        self.gpsspeed = value
+
+    def set_magcourse(self, value):
+        self.magcourse = value
+
+    def set_magdeclination(self, value):
+        self.magdeclination = value
+
+    def set_currentcourse(self, value):
+        self.currentcourse = value
+
+    def set_destination(self, value):
+        self.destination = value
+
+    def set_distance(self, value):
+        self.distance = value
+
+    def set_desiredcourse(self, value):
+        self.desiredcourse = value
+
+    def set_waypoints(self, value):
+        self.waypoints = value
+
+    def set_waypointarrivedradius(self, value):
+        self.waypointarrivedradius = value
+
+    def set_Kp(self, value):
+        self.Kp = value
+
+    def set_Ki(self, value):
+        self.Ki = value
+
+    def set_Kd(self, value):
+        self.Kd = value
+
+    def seterror(self, value):
+        self.rror = value
+
+    def seterrSum(self, value):
+        self.rrSum = value
+
+    def setdErr(self, value):
+        self.Err = value
+
+    def setlastErr(self, value):
+        self.astErr = value
+
+    def set_gpsalpha(self, value):
+        self.gpsalpha = value
+
+    def set_magalpha(self, value):
+        self.magalpha = value
+
+    def set_declinationalpha(self, value):
+        self.declinationalpha = value
+
+    def set_surge(self, value):
+        self.surge = value
+
+    def set_steer(self, value):
+        self.steer = value
+
+    def set_vmin(self, value):
+        self.vmin = value
+
+    def set_vmax(self, value):
+        self.vmax = value
+
+    def set_steergain(self, value):
+        self.steergain = value
+
+    def set_mpl(self, value):
+        self.mpl = value
+
+    def set_mpr(self, value):
+        self.mpr = value
+
+    def set_maxpwm(self, value):
+        self.maxpwm = value

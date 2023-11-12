@@ -45,11 +45,14 @@ def react():
             # not a known reaction
             print('action: ',action, ' is unknown')
             return  
-        if len(packet) > 0: 
-            # action has parameters
-            listeners[action](*packet)
-        else:
-            listeners[action]()
+        try:
+            if len(packet) > 0: 
+                # action has parameters
+                listeners[action](*packet)
+            else:
+                listeners[action]()
+        except TypeError as e:
+            raise TypeError(str(e),' while processing to',action,packet)
 
 async def receiveTask():
     ''' receives messages via bluetooth and adds them to the receive queue '''

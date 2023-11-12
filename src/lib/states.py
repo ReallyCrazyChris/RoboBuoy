@@ -37,8 +37,8 @@ class Stop(State):
     def start(self):
         """Perform these actions when this state is first entered."""
         print('stop state entry')
-        store.mode=self.name
-        store.setsurge(0)
+        store.mode = self.name
+        store.surge = 0
 
     def end(self):
         """Perform these actions when this state is exited."""
@@ -121,8 +121,8 @@ class CalibrateMag(State):
         self.driveTask = asyncio.create_task( driveTask() )
 
         # slow rotation on the robots axis
-        store.setsurge(0)  
-        store.setsteer(20) 
+        store.surge = 0  
+        store.steer = 0 
         
         # claibrate
         await calibrateMagTask()

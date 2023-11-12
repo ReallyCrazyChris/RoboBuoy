@@ -7,7 +7,9 @@ import uasyncio as asyncio
 
 from lib.utils import distancebearing
 from lib.gps import GPS
+from lib.storetasks import sendWaypointMessage
 from lib.store import Store
+
 store = Store()
 gps = GPS()
 
@@ -34,7 +36,7 @@ async def autoTask():
                 if len(store.waypoints) > 0 and store.distance < store.waypointarrivedradius:
                     print(' ... arrived waypoint',store.destination)
                     store.waypoints.pop(0)
-                    store.sendWaypointsUpdate()
+                    sendWaypointMessage()
             
             else: # when there are no more waypoint to follow : hold station
                 store.distance, store.desiredcourse = distancebearing(store.position,store.destination)

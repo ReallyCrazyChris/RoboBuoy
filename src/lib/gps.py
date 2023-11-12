@@ -3,7 +3,6 @@ import uasyncio as asyncio
 
 from lib.utils import convert_dm_dd, normalize
 from lib.gpsuart import gpsuart
-
 from lib.store import Store
 store = Store()
 
@@ -46,17 +45,6 @@ class GPS(object):
         self.timestamp = (0, 0, 0)
         self.date = (0, 0, 0)
         self.local_offset = local_offset
-
-        # Position/Motion
-        #self.positionvalid = False
-        #self.timestamp = (0, 0, 0)
-        #self.latitude = 0
-        #self.longitude = 0
-        #self.latitude_string = ''
-        #self.longitude_string = ''
-        #self.position = ("0","0")
-        #self.gpsspeed = 0.0  #meters per second
-        #self.gpscourse = 0.0 #degrees
 
         # UART readall
         self.oldstring = bytes()
