@@ -39,7 +39,6 @@ def persistedstate():
         #"steer":store.steer,
         "vmin":store.vmin,
         "vmax":store.vmax,
-        "steergain":store.steergain,
         "mpl":store.mpl,
         "mpr":store.mpr,
         "maxpwm":store.maxpwm,
