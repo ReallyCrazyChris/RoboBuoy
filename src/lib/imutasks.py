@@ -6,7 +6,7 @@ imu = IMU()
 # Calibrate Magnetometer Async Task
 ########################################
 
-async def calibrateMagTask(samples:int=800,delay:int=10) -> tuple:
+async def calibrateMagTask(samples:int=2000,delay:int=20) -> tuple:
     '''
     create magnetometer bias, normailization and scaling
     this is perferformed while the magnetomer is rotating around all axes

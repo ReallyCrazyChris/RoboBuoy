@@ -27,6 +27,13 @@ async def armMotorsCoroutine():
     motorLeft.duty(0)
     motorRight.duty(0) 
 
+def driveMotors(pwmleft=0,pwmright=0):
+    motorLeft.duty(pwmleft)
+    motorRight.duty(pwmright)  
+     
+def stopMotors():
+    motorLeft.duty(0)
+    motorRight.duty(0)  
 
 async def driveTask():
     ''' drive motors (steer in degrees -180..180 , surge in cm/s) '''
@@ -34,8 +41,8 @@ async def driveTask():
         print('starting driveMotorsTask')
         while 1:
 
-            vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
-            vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
+            vl = (2*store.surge + radians(store.steer)) / 2
+            vr = (2*store.surge - radians(store.steer)) / 2
 
             # clamp max and min motor speeds  
             vl = min(store.vmax,vl)

@@ -109,7 +109,7 @@ class Manual(State):
 
 class CalibrateMag(State):
     ''' The Magnetic compass is calibrating'''
-
+    
     def __init__( self, sm ):
         self.name = 'calibratemag'
         self.sm = sm #statemachine
@@ -117,21 +117,15 @@ class CalibrateMag(State):
         self.calibrateMagTask=None
 
     async def start(self):
+        from motors import driveMotors, stopMotors
         store.mode=self.name
-        self.driveTask = asyncio.create_task( driveTask() )
-
-        # slow rotation on the robots axis
-        store.surge = 0  
-        store.steer = 0 
-        
-        # claibrate
-        await calibrateMagTask()
-
-        #return to sopt state
+        driveMotors(60,0)      
+        await calibrateMagTask()     
         self.sm.transitionTo('stop')
 
     def end(self):
-        self.driveTask.cancel()
+        from motors import driveMotors, stopMotors
+        stopMotors()
 
     def canTransitionTo(self,statename):
         if (statename in ['stop']): return statename

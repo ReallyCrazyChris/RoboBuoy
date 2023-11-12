@@ -85,7 +85,7 @@ async def fuseGpsTask():
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
 
             # update the compass declination based on the latest gps course
-            if store.declinationalpha > 0 and store.gpsspeed >= 1:
+            if store.declinationalpha > 0 and store.distance > 10:  #and store.gpsspeed >= 1
                 # Complementary filter strongly weighted towards the magdeclination
                 declination =  (1.0 - store.declinationalpha) * store.magdeclination + ( store.declinationalpha * (store.gpscourse - store.magcourse)  )
                 store.magdeclination = normalize(declination,-180,180)

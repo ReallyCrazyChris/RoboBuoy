@@ -44,7 +44,8 @@ class State(object):
         try:
             asyncio.create_task( self.start() )
         except TypeError:
-            self.start()
+            pass
+            #self.start()
         
     def action(self,statename):
         """Perform these actions when in this state."""
