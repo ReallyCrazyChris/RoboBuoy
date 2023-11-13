@@ -77,12 +77,13 @@ async def fuseGpsTask():
         while True:
             
             await gps.courseAvailable.wait()
-
+       
             # update the currentcourse based on the latest gps cource
             if store.gpsalpha > 0 and store.gpsspeed >= 1:# must be moving for the gpscourse to be valid           
                 # Complementary filter strongly weighted towards the gps
                 currentcourse = (1.0 - store.gpsalpha) * store.currentcourse + store.gpsalpha * store.gpscourse
                 store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+
 
             # update the compass declination based on the latest gps course
             if store.declinationalpha > 0 and store.distance > 10:  #and store.gpsspeed >= 1

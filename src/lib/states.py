@@ -5,6 +5,7 @@ from lib.auto import autoTask, holdTask
 from lib.imutasks import calibrateMagTask
 
 from lib.store import Store
+from lib.storepersistance import loadsettings
 store = Store()
 
 # Unused Movement States : Adrift, underWay, afloat, aground, obstacle ahead, ahoy, alongside, anchored, ashore, capsize,
@@ -19,9 +20,11 @@ class Init(State):
 
     async def start(self):
         store.mode=self.name
+        loadsettings()
         # arm the motors
         await armMotorsCoroutine()
         # go to state
+
         self.sm.transitionTo('stop')
 
     def canTransitionTo(self,statename):

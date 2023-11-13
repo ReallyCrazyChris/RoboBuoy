@@ -4,7 +4,6 @@ Micropython driver for the I2C MPU9250 9-DOF Sensor
 import utime
 from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
-
 from lib.i2c import i2c
 
 class MagDataNotReady(Exception):
@@ -33,7 +32,7 @@ class IMU(object):
         self.accelbias = (0,0,1)
         self.gyrobias = (0,0,0)
         self.magbias = (20.03906, -23.30859, 17.7207, 48.9375, 54.10547, 36.19727, 0.9484222, 0.8578321, 1.282235)
-        self.declination = 0
+
         self.tempoffset = 0
         self.tempsensitivity = 321
 

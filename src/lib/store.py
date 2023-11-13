@@ -55,6 +55,7 @@ class Store(object):
         self.gpsalpha = 0.97  # % trust in the gps course
         self.magalpha = 0.00  # % trust in the compass course
         self.declinationalpha = 0.00 # % we trust in the gps to calculate the magnetic declination
+
         # Motor State - never set these directly
         self.surge = 0 #  desired robot speed cm/s
         self.steer = 0 #  desired robot angualr rotation deg/s
@@ -408,6 +409,7 @@ class Store(object):
         self.magalpha = value
 
     def set_declinationalpha(self, value):
+        print('set_declinationalpha',value)
         self.declinationalpha = value
 
     def set_surge(self, value):
