@@ -1,3 +1,4 @@
+from lib.events import on
 from lib import server
 from lib.storemessages import statemessage_chunk1,statemessage_chunk2,statemessage_chunk3,statemessage_chunk4,statemessage_chunk5,statemessage_chunk6,statemessage_chunk7
 from lib.storemessages import pidsettingsmessage, motorsettingsmessage,alphasettingsmessage
@@ -28,9 +29,9 @@ def getAlphasettings():
 
 
 
-server.addListener('getState',getState)
-server.addListener('getPIDsettings', getPIDsettings)
-server.addListener('getMotorsettings', getMotorsettings)
-server.addListener('getAlphasettings', getAlphasettings)    
+on('getState',getState)
+on('getPIDsettings', getPIDsettings)
+on('getMotorsettings', getMotorsettings)
+on('getAlphasettings', getAlphasettings)    
 
 

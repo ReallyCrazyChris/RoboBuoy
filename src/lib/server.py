@@ -1,29 +1,13 @@
 import uasyncio as asyncio
 from lib.bleuart import BLEUART
+from lib.events import dispatch
 
 bleuart = BLEUART()
 bleuartLock = asyncio.Lock() # async lock to prevent multiple communication actions at the same time
 
-listeners = {}
 sendqueue = [] # of messages to be sent
 receivequeue = [] # of messages that have been received
     
-def messageHandler(message:list):
-    
-    if not len( message ) >= 1: return
-    name = str(message[0])
-
-    if name in listeners.keys():
-        listeners[name](message[1])
-    else:
-        raise Exception('no listener for event',name) 
-
-def addListener(name:str, handler:function):
-    listeners[name] = handler
-    
-def removeListener(name:str):
-    del listeners[name]
-
 def send(*packet):
     """sends commands to a host server"""
     if bleuart.is_connected:
@@ -41,16 +25,12 @@ def react():
         packet = receivequeue.pop(0)
         action = packet.pop(0)
 
-        if not action in listeners:
-            # not a known reaction
-            print('action: ',action, ' is unknown')
-            return  
         try:
             if len(packet) > 0: 
                 # action has parameters
-                listeners[action](*packet)
+                dispatch(action,*packet)
             else:
-                listeners[action]()
+                dispatch(action)
         except TypeError as e:
             raise TypeError(str(e),' while processing to',action,packet)
 

@@ -52,8 +52,6 @@ class IMU(object):
         #DeltaT
         self.startTime = None
 
-        #Load saved calibration data
-        self.load()
 
     #Accelerometer
     def accelfullScaleRange( self, fullScaleRange=0 ):
@@ -230,48 +228,4 @@ class IMU(object):
         return deltaT
 
 
-    def save(self, filename='imu.json' ):
-        """write imu persistant data to flash"""
-        import json
-
-        with open(filename, 'w') as file:
-
-            store = {}            
-            store["accelbias"] = self.accelbias
-            store["gyrobias"] = self.gyrobias
-            store["magbias"] = self.magbias 
-            # store["declination"] = self.declination
-            store["tempoffset"] = self.tempoffset
-            store["tempsensitivity"] = self.tempsensitivity
-
-            json.dump(store, file)
-
-        print('saved imu config:')
-        print('accelbias',self.accelbias)
-        print('gyrobias',self.gyrobias)
-        print('magbias',self.magbias)
-
-    def load(self, filename='imu.json' ):
-        """load imu persistant data set from flash"""
-        import json 
-        try:
-            with open(filename, 'r') as file:
-                
-                store = json.load(file)
-
-                self.accelbias = store["accelbias"]
-                self.gyrobias = store["gyrobias"]
-                self.magbias = store["magbias"]
-                #self.declination = store["declination"]
-                self.tempoffset = store["tempoffset"]
-                self.tempsensitivity = store["tempsensitivity"]
-
-                print('loaded imu config:')
-                print('accelbias',self.accelbias)
-                print('gyrobias',self.gyrobias)
-                print('magbias',self.magbias)
-
-        except Exception :
-            pass
-           
 

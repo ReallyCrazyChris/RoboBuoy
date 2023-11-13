@@ -7,6 +7,8 @@ from lib.motors import armMotorsCoroutine
 from lib.statemachine import StateMachine
 from lib.states import Init, Stop, Manual, Hold, Auto, CalibrateMag
 
+from lib.events import on
+
 # use store and gps singleton instances
 gps = GPS()
 
@@ -34,7 +36,7 @@ async def mainTaskLoop():
     sm.addState(CalibrateMag)
     sm.setState('init')
     # recives mode change commands
-    server.addListener('mode',sm.transitionTo)
+    on('mode',sm.transitionTo)
 
     #TODO I dont like this. it looks very pointless
     import lib.storehandlers

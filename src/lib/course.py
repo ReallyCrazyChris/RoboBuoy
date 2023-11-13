@@ -1,5 +1,4 @@
 import uasyncio as asyncio
-from lib import server
 from lib.store import Store
 from lib.utils import normalize, constrain
 from lib.imu import IMU, MagDataNotReady

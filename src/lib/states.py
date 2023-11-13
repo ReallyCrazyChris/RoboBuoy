@@ -4,9 +4,13 @@ from lib.motors import armMotorsCoroutine,driveTask
 from lib.auto import autoTask, holdTask
 from lib.imutasks import calibrateMagTask
 
+
+
 from lib.store import Store
 from lib.storepersistance import loadsettings
 store = Store()
+
+
 
 # Unused Movement States : Adrift, underWay, afloat, aground, obstacle ahead, ahoy, alongside, anchored, ashore, capsize,
 # Unused Indication States : beaconing, bell
@@ -19,12 +23,15 @@ class Init(State):
         self.sm = sm #statemachine
 
     async def start(self):
+        from lib.imupersistance import loadimuconfig
         store.mode=self.name
+        
+        loadimuconfig()
         loadsettings()
+
         # arm the motors
         await armMotorsCoroutine()
-        # go to state
-
+        # then go to state
         self.sm.transitionTo('stop')
 
     def canTransitionTo(self,statename):
@@ -120,14 +127,14 @@ class CalibrateMag(State):
         self.calibrateMagTask=None
 
     async def start(self):
-        from motors import driveMotors, stopMotors
+        from motors import driveMotors
         store.mode=self.name
         driveMotors(60,0)      
         await calibrateMagTask()     
         self.sm.transitionTo('stop')
 
     def end(self):
-        from motors import driveMotors, stopMotors
+        from motors import stopMotors
         stopMotors()
 
     def canTransitionTo(self,statename):

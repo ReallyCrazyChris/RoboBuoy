@@ -2,7 +2,6 @@
 # Messages that update RoboBuoyAPP State
 #####################################################
 
-from lib import server
 from lib.store import Store
 store = Store()
 
