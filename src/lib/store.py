@@ -65,6 +65,11 @@ class Store(object):
         self.mpr = 55  #  right pwm value where the motor starts to turn
         self.maxpwm = 110 # maximum pwm signal sent to the motors
 
+    def update(self,dictionary):
+        'update store from dictionary'
+        for key,value in dictionary.items():
+            setattr(self,key,value)  
+
     @property
     def number(self):
         return self._number

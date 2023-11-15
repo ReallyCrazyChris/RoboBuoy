@@ -39,6 +39,7 @@ async def mainTaskLoop():
     on('mode',sm.transitionTo)
 
     #TODO I dont like this. it looks very pointless
+    # Actually these need to go in the states they are used in
     import lib.storehandlers
     import lib.storerequests
 

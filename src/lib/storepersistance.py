@@ -1,6 +1,7 @@
 ##################################################### 
 # Persist and Hydrate the RobotBouys State from files
 #####################################################
+from lib.events import on
 from lib.store import Store
 store = Store()
 
@@ -45,20 +46,21 @@ def persistedstate():
     }
 
 def savesettings():
-    """write persistedstate to flash"""
-
+    '''write persistedstate to flash'''
     import json
     with open('settings.json', 'w') as file:
         json.dump(persistedstate(), file)
 
 def loadsettings():
-    """load persistedstate from flash"""
-
+    '''load persistedstate from flash'''
     import json
     try:
         with open('settings.json', 'r') as file:
             settings = json.load(file) 
-            #TODO I am not sure this is working together with the @propery approach in the Store
-            store.__dict__.update(settings)
-    except Exception :
+            store.update(settings)
+    except Exception:
         pass
+
+
+on('savesettings',savesettings)
+on('loadsettings',loadsettings)

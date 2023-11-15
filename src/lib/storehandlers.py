@@ -2,13 +2,8 @@
 # RoboBouyAPP calls these update / action handlers 
 #####################################################
 from lib.events import on
-from lib.storepersistance import savesettings, loadsettings
-from lib.store import Store
+from lib.store import store
 store = Store()
-
-# Actions Handlers
-on('savesettings',savesettings)
-on('loadsettings',loadsettings)
 
 # Update Handlers
 on('number', store.set_number)

@@ -25,9 +25,6 @@ class IMU(object):
 
     def __init__( self ):
 
-        #Networking
-        self.i2c = i2c 
-
         #Constants
         self.accelbias = (0,0,1)
         self.gyrobias = (0,0,0)
@@ -61,14 +58,14 @@ class IMU(object):
         returns fullScaleRange
         ''' 
         if fullScaleRange != None and fullScaleRange in [0,1,2,3]:
-            self.i2c.writeto_mem(0x69, 0x1C, pack('b',
-            (self.i2c.readfrom_mem(0x69, 0x1C, 1)[0] & ~24) | fullScaleRange << 3
+            i2c.writeto_mem(0x69, 0x1C, pack('b',
+            (i2c.readfrom_mem(0x69, 0x1C, 1)[0] & ~24) | fullScaleRange << 3
             ))
 
             # pick the accelerometer Sensitivity Scale Factor    
             self.accelSSF = 16834 #[16384,8192,4096,2048][fullScaleRange] 
     
-        return (self.i2c.readfrom_mem(0x69, 0x1C, 1)[0] & 24) >> 3 
+        return (i2c.readfrom_mem(0x69, 0x1C, 1)[0] & 24) >> 3 
 
     def readAccel( self ):
         """
@@ -76,7 +73,7 @@ class IMU(object):
         North-East-Down(NED) as a fixed, parent coordinate system
         """
 
-        y,x,z = unpack('>hhh',self.i2c.readfrom_mem(0x69, 0x3B, 6)) 
+        y,x,z = unpack('>hhh',i2c.readfrom_mem(0x69, 0x3B, 6)) 
 
         x = x / self.accelSSF
         y = -1 * y / self.accelSSF
@@ -97,14 +94,14 @@ class IMU(object):
         fullScaleRange: 0,1,2,3 => +-250, +-500, +-1000, +-2000 degrees/second  
         """
         if fullScaleRange != None and fullScaleRange in [0,1,2,3]:
-            self.i2c.writeto_mem(0x69, 0x1B, pack('b',
-            (self.i2c.readfrom_mem(0x69, 0x1B, 1)[0] & ~24) | fullScaleRange << 3
+            i2c.writeto_mem(0x69, 0x1B, pack('b',
+            (i2c.readfrom_mem(0x69, 0x1B, 1)[0] & ~24) | fullScaleRange << 3
             ))
 
             # pick the gyro Sensitivity Scale Factor    
             self.gyroSSF = 131 #[131,65.5,32.8,16.4][fullScaleRange] 
 
-        return (self.i2c.readfrom_mem(0x69, 0x1B, 1)[0] & 24) >> 3 
+        return (i2c.readfrom_mem(0x69, 0x1B, 1)[0] & 24) >> 3 
 
     def gyroLowPassFilter(self, bandwidth=None ):
         """    
@@ -112,18 +109,18 @@ class IMU(object):
         bandwidth: 0,1,2,3,4,5,6,7 => 250Hz, 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz, 3600Hz
         """
         if bandwidth and bandwidth in [0,1,2,3,4,5,6,7]:
-            self.i2c.writeto_mem(0x69, 0x1A, pack('b',
-            (self.i2c.readfrom_mem(0x69, 0x1A, 1)[0] & ~7 ) | bandwidth
+            i2c.writeto_mem(0x69, 0x1A, pack('b',
+            (i2c.readfrom_mem(0x69, 0x1A, 1)[0] & ~7 ) | bandwidth
             ))
 
-        return self.i2c.readfrom_mem(0x69, 0x1A, 1)[0] & 7  
+        return i2c.readfrom_mem(0x69, 0x1A, 1)[0] & 7  
 
     def readGyro( self ):
         """
         return tuple of degrees per second (x,y,z)
         North-East-Down(NED) as a fixed, parent coordinate system
         """
-        y,x,z = unpack('>hhh',self.i2c.readfrom_mem(0x69, 0x43, 6)) 
+        y,x,z = unpack('>hhh',i2c.readfrom_mem(0x69, 0x43, 6)) 
         x = x / self.gyroSSF
         y = y / self.gyroSSF
         z = z / self.gyroSSF
@@ -142,18 +139,18 @@ class IMU(object):
     def initMag( self ):
         # Directly access the magnetomoeter via I2C BYPASS mode
         try:
-            self.i2c.writeto_mem(0x69, 0x6B, b'\x80') #PWR_MGMT_1 = H_RESET # Rest the MPU6050 Magnetomoeter
-            self.i2c.writeto_mem(0x69, 0x6A, b'\x00') #USER_CTRL_AD = I2C_MST = 0x00 disable i2c master
-            self.i2c.writeto_mem(0x69, 0x37, b'\x02') #INT_PIN_CFG = BYPASS[1]
+            i2c.writeto_mem(0x69, 0x6B, b'\x80') #PWR_MGMT_1 = H_RESET # Rest the MPU6050 Magnetomoeter
+            i2c.writeto_mem(0x69, 0x6A, b'\x00') #USER_CTRL_AD = I2C_MST = 0x00 disable i2c master
+            i2c.writeto_mem(0x69, 0x37, b'\x02') #INT_PIN_CFG = BYPASS[1]
         except OSError as e:
             print('please check the MPU9250 I2C wiring ')
 
         # Read the Factory set Magntometer Sesetivity Adjustments
-        self.i2c.writeto_mem(0x0C, 0x0A, b'\x1F') #CNTL1 Fuse ROM mode
+        i2c.writeto_mem(0x0C, 0x0A, b'\x1F') #CNTL1 Fuse ROM mode
         utime.sleep_ms(100) # Settle Time
 
         # Read factory calibrated sensitivity constants
-        asax, asay, asaz = unpack('<bbb',self.i2c.readfrom_mem(0x0C, 0x10, 3)) 
+        asax, asay, asaz = unpack('<bbb',i2c.readfrom_mem(0x0C, 0x10, 3)) 
 
         # Calculate the Magnetometer Sesetivity Adjustments
         self.asax = (((asax-128)*0.5)/128)+1
@@ -161,7 +158,7 @@ class IMU(object):
         self.asaz = (((asaz-128)*0.5)/128)+1
 
         # Set Register CNTL1 to 16-bit output, Continuous measurement mode 100Hz
-        self.i2c.writeto_mem(0x0C, 0x0A, b'\x16') 
+        i2c.writeto_mem(0x0C, 0x0A, b'\x16') 
 
        
     def readMag( self, bias=(0,0,0,1,1,1,1,1,1) ):
@@ -171,14 +168,14 @@ class IMU(object):
         """
 
         #Data Ready
-        DRDY = self.i2c.readfrom_mem(0x0C, 0x02, 1)[0] & 0x01
+        DRDY = i2c.readfrom_mem(0x0C, 0x02, 1)[0] & 0x01
  
         if DRDY != 0x01 : # Data is ready
             raise MagDataNotReady()
 
-        x,y,z = unpack('<hhh',self.i2c.readfrom_mem(0x0C, 0x03, 6))  
+        x,y,z = unpack('<hhh',i2c.readfrom_mem(0x0C, 0x03, 6))  
 
-        HOFL = self.i2c.readfrom_mem(0x0C, 0x09, 1)[0] & 0x08
+        HOFL = i2c.readfrom_mem(0x0C, 0x09, 1)[0] & 0x08
 
         # apply the Factory Magentometer Sensetivity adjustment
         x,y,z = x * self.asax, y * self.asay , z * self.asaz
@@ -206,7 +203,7 @@ class IMU(object):
         """
         return temperature in deg Celcius
         """
-        temp = unpack('>h',self.i2c.readfrom_mem(0x69, 0x41, 2)) 
+        temp = unpack('>h',i2c.readfrom_mem(0x69, 0x41, 2)) 
         temp = ((temp[0] - self.tempoffset) / self.tempsensitivity) + 21
 
         return temp

@@ -2,11 +2,11 @@
 # Persist and Hydrate the IMU's Settings
 #####################################################
 from lib.events import on
-from lib.imu import IMU
-imu = IMU()
 
 def persistedstate():
     ''' state that is to be persisted '''
+    from lib.imu import IMU
+    imu = IMU()
     return {
        "accelbias":imu.accelbias,
        "gyrobias":imu.gyrobias, 
@@ -17,6 +17,9 @@ def persistedstate():
 def saveimuconfig():
     """write persistedstate to flash"""
     import json
+    from lib.imu import IMU
+    imu = IMU()
+
     with open('imu.json', 'w') as file:
         json.dump(persistedstate(), file)
     
@@ -28,20 +31,21 @@ def saveimuconfig():
 def loadimuconfig():
     """load persistedstate from flash"""
     import json
+    from lib.imu import IMU
+    imu = IMU()
     try:
         with open('imu.json', 'r') as file:
-            settings = json.load(file) 
-            imu.__dict__.update(settings)
+            config = json.load(file) 
+            # becasue json does not have tuples we do this:
+            imu.accelbias = tuple(config['accelbias'])
+            imu.gyrobias = tuple(config['gyrobias'])
+            imu.magbias = tuple(config['magbias'])
+            imu.tempsensitivity = config['tempsensitivity']
+            imu.tempoffset = config['tempoffset']
 
-        print('loaded imu config from imu.json:')
-        print('accelbias',imu.accelbias)
-        print('gyrobias',imu.gyrobias)
-        print('magbias',imu.magbias)
-    except Exception :
-        pass
+    except OSError:
+        print('imu.json not found ... imu will need calibraiton')    
 
 # process received commands from the app
 on('saveimuconfig',saveimuconfig)
 on('loadimuconfig',loadimuconfig)
-
-            
