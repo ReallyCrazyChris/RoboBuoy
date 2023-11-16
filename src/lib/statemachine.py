@@ -19,7 +19,7 @@ class StateMachine(object):
         """
         if self.activeState is not None:
             self.activeState.action(data)
-        new_state_name = self.activeState.canTransitionTo(data)
+        new_state_name = self.activeState.validateTransition(data)
         if new_state_name is not None:
             self.setState(new_state_name)
 
@@ -51,7 +51,13 @@ class State(object):
         """Perform these actions when in this state."""
         pass
 
-    def canTransitionTo(self,statename):
+
+    def transitionTo(self,statename):
+        """ helper function to transition to another state"""
+        self.sm.transitionTo(statename)
+
+
+    def validateTransition(self,statename):
         """Check these conditions to see if state should be changed."""
         pass
 

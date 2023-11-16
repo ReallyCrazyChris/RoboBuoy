@@ -5,6 +5,9 @@ import utime
 from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
 from lib.i2c import i2c
+from lib.store import Store
+
+store = Store() #singleton reference
 
 class MagDataNotReady(Exception):
     "Possible race condition in reading magnetometer"
@@ -12,7 +15,7 @@ class MagDataNotReady(Exception):
 
 class IMU(object):
     '''
-    Class provides 9-DOF IMU sensor information for the MPU9250
+    Singleton Class provides 9-DOF IMU sensor information for the MPU9250
     North-East-Down(NED) as a fixed, parent coordinate system
     '''
 
@@ -25,13 +28,12 @@ class IMU(object):
 
     def __init__( self ):
 
-        #Constants
-        self.accelbias = (0,0,1)
-        self.gyrobias = (0,0,0)
-        self.magbias = (20.03906, -23.30859, 17.7207, 48.9375, 54.10547, 36.19727, 0.9484222, 0.8578321, 1.282235)
-
-        self.tempoffset = 0
-        self.tempsensitivity = 321
+        # Configure settings from the store 
+        self.accelbias =  tuple(store.accelbias)
+        self.gyrobias =   tuple(store.gyrobias)
+        self.magbias =    tuple(store.magbias)
+        self.tempoffset = store.tempoffset
+        self.tempsensitivity = store.tempsensitivity
 
         #AccelInit
         self.accel = (0,0,0) 
@@ -195,8 +197,6 @@ class IMU(object):
         '''returns the magnetic heading in degrees:  -179 -> 180 degrees'''
         x,y,_ = self.readMag( self.magbias )
         return int(degrees(atan2(x,y)))
-
-   
 
     #Temperature Sensor
     def readTemp( self ):

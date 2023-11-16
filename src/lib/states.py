@@ -32,9 +32,9 @@ class Init(State):
         # arm the motors
         await armMotorsCoroutine()
         # then go to state
-        self.sm.transitionTo('stop')
+        self.transitionTo('stop')
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['stop']): return statename
 
 
@@ -54,7 +54,7 @@ class Stop(State):
         """Perform these actions when this state is exited."""
         print('stop state exit')
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['manual','hold','auto','calibratemag']): return statename        
 
 
@@ -75,7 +75,7 @@ class Auto(State):
         self.autoTask.cancel()
         self.driveTask.cancel()
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['stop','manual','hold']): return statename     
 
 class Hold(State):
@@ -95,7 +95,7 @@ class Hold(State):
         self.holdTask.cancel()
         self.driveTask.cancel()
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['stop','manual','auto']): return statename          
 
 class Manual(State):
@@ -113,7 +113,7 @@ class Manual(State):
     def end(self):
         self.driveTask.cancel()  
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['stop','hold','auto']): return statename
 
 
@@ -131,13 +131,13 @@ class CalibrateMag(State):
         store.mode=self.name
         driveMotors(60,0)      
         await calibrateMagTask()     
-        self.sm.transitionTo('stop')
+        self.transitionTo('stop')
 
     def end(self):
         from motors import stopMotors
         stopMotors()
 
-    def canTransitionTo(self,statename):
+    def validateTransition(self,statename):
         if (statename in ['stop']): return statename
 
             

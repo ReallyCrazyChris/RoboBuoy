@@ -43,6 +43,11 @@ def persistedstate():
         "mpl":store.mpl,
         "mpr":store.mpr,
         "maxpwm":store.maxpwm,
+        "accelbias":store.accelbias, 
+        "gyrobias":store.gyrobias,
+        "magbias":store.magbias,
+        "tempoffset":store.tempoffset, 
+        "tempsensitivity":store.tempsensitivity,
     }
 
 def savesettings():

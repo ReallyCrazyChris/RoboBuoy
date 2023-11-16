@@ -1,5 +1,5 @@
 ##################################################### 
-# Singleton Store holing the  RoboBuoy's State
+# Singleton Store holding the RoboBuoy's state
 #####################################################
 
 class Store(object):
@@ -64,6 +64,13 @@ class Store(object):
         self.mpl = 53  #  left pwm value where the motor starts to turn
         self.mpr = 55  #  right pwm value where the motor starts to turn
         self.maxpwm = 110 # maximum pwm signal sent to the motors
+
+        # IMU 
+        self.accelbias = (0,0,1)
+        self.gyrobias = (0,0,0)
+        self.magbias = (20.03906, -23.30859, 17.7207, 48.9375, 54.10547, 36.19727, 0.9484222, 0.8578321, 1.282235)
+        self.tempoffset = 0
+        self.tempsensitivity = 321
 
     def update(self,dictionary):
         'update store from dictionary'
@@ -300,14 +307,6 @@ class Store(object):
         self._vmax = int(value)
 
     @property
-    def steergain(self):
-        return self._steergain
-
-    @steergain.setter
-    def steergain(self, value):
-        self._steergain = int(value)
-
-    @property
     def mpl(self):
         return self._mpl
 
@@ -414,7 +413,6 @@ class Store(object):
         self.magalpha = value
 
     def set_declinationalpha(self, value):
-        print('set_declinationalpha',value)
         self.declinationalpha = value
 
     def set_surge(self, value):

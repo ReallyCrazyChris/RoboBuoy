@@ -3,7 +3,6 @@ from lib.storetasks import sendMotionMessageTask
 from lib import server
 from lib import course
 from lib.gps import GPS
-from lib.motors import armMotorsCoroutine
 from lib.statemachine import StateMachine
 from lib.states import Init, Stop, Manual, Hold, Auto, CalibrateMag
 

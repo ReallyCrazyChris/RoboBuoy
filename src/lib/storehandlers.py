@@ -2,7 +2,7 @@
 # RoboBouyAPP calls these update / action handlers 
 #####################################################
 from lib.events import on
-from lib.store import store
+from lib.store import Store
 store = Store()
 
 # Update Handlers

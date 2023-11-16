@@ -231,3 +231,29 @@ def alphasettingsmessage():
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
     }
+
+
+def magnetometermessage():
+    ''' state that changes with the robots course settings '''
+    return {
+        "magbias":store.magbias,
+    }
+
+def accelerometermessage():
+    ''' state that changes with the robots course settings '''
+    return {
+        "accelbias":store.accelbias,
+    }
+
+def gyromessage():
+    ''' state that changes with the robots course settings '''
+    return {
+        "gyrobias":store.gyrobias,
+    }
+
+def temperaturemessage():
+    ''' state that changes with the robots course settings '''
+    return {
+        "tempoffset":store.tempoffset,
+        "tempsensitivity":store.tempsensitivity,
+    }
