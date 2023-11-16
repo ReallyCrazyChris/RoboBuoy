@@ -8,7 +8,7 @@ from lib.imutasks import calibrateMagTask
 
 from lib.store import Store
 from lib.storepersistance import loadsettings
-store = Store()
+store = Store.instance()
 
 
 

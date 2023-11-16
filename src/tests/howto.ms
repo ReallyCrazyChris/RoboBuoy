@@ -1,2 +1,0 @@
-docker pull micropython/unix:v1.18
-docker run -it --name micropython-1.18 --network=host --mount type=bind,source="C:\Users\bentchvp\Development\RoboBuoy",target=/home --entrypoint bash micropython/unix:v1.18

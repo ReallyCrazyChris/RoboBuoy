@@ -3,7 +3,7 @@ from lib import server
 from lib.storemessages import statemessage_chunk1,statemessage_chunk2,statemessage_chunk3,statemessage_chunk4,statemessage_chunk5,statemessage_chunk6,statemessage_chunk7
 from lib.storemessages import pidsettingsmessage, motorsettingsmessage,alphasettingsmessage
 from lib.store import Store
-store = Store()
+store = Store.instance()
 
 #TODO improve the message scheme
 

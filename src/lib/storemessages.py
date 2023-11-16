@@ -3,7 +3,7 @@
 #####################################################
 
 from lib.store import Store
-store = Store()
+store = Store.instance()
 
 def statemessage():
     ''' state that changes when the robot is initalized '''

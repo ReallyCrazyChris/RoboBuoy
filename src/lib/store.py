@@ -5,14 +5,15 @@
 class Store(object):
 
     _instance = None # is a singleton
-    
-    def __new__(class_, *args, **kwargs):
-        if not isinstance(class_._instance, class_):
-            class_._instance = object.__new__(class_, *args, **kwargs)
-        return class_._instance
 
-    def __init__( self ):
-        
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = Store()
+            cls._instance._initialize()
+        return cls._instance
+
+    def _initialize( self ):    
         ####################
         # The RoboBuoy Store 
         ####################

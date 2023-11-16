@@ -7,7 +7,7 @@ from math import atan2, degrees, sqrt, radians
 from lib.i2c import i2c
 from lib.store import Store
 
-store = Store() #singleton reference
+store = Store.instance() #singleton reference
 
 class MagDataNotReady(Exception):
     "Possible race condition in reading magnetometer"

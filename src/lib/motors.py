@@ -2,7 +2,7 @@ import uasyncio as asyncio
 from machine import PWM, Pin
 from math import radians
 from lib.store import Store
-store = Store()
+store = Store.instance()
 
 # PWM control of ESC motor controlers 
 motorLeft = PWM(Pin(2))

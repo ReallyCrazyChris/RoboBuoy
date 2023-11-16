@@ -6,7 +6,7 @@ from lib.gps import GPS
 
 imu = IMU()
 gps = GPS()
-store = Store()
+store = Store.instance()
 
 ########################
 # Fuse Gyro Task

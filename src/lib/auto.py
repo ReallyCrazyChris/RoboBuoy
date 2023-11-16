@@ -10,7 +10,7 @@ from lib.gps import GPS
 from lib.storetasks import sendWaypointMessage
 from lib.store import Store
 
-store = Store()
+store = Store.instance()
 gps = GPS()
 
 async def autoTask():

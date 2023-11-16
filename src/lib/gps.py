@@ -4,7 +4,7 @@ import uasyncio as asyncio
 from lib.utils import convert_dm_dd, normalize
 from lib.gpsuart import gpsuart
 from lib.store import Store
-store = Store()
+store = Store.instance()
 
 __HEMISPHERES = ('N', 'S', 'E', 'W')
 

@@ -3,7 +3,7 @@
 #####################################################
 from lib.events import on
 from lib.store import Store
-store = Store()
+store = Store.instance()
 
 def persistedstate():
     ''' state that is to be persisted '''
