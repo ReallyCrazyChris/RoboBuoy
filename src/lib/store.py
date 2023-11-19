@@ -183,7 +183,7 @@ class Store(object):
 
     @currentcourse.setter
     def currentcourse(self, value):
-        self._currentcourse = int(value)
+        self._currentcourse = float(value)
 
     @property
     def destination(self):
@@ -287,7 +287,7 @@ class Store(object):
 
     @steer.setter
     def steer(self, value):
-        self._steer = int(value)
+        self._steer = float(value)
 
 
     @property
@@ -427,9 +427,6 @@ class Store(object):
 
     def set_vmax(self, value):
         self.vmax = value
-
-    def set_steergain(self, value):
-        self.steergain = value
 
     def set_mpl(self, value):
         self.mpl = value

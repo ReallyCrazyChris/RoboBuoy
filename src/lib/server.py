@@ -27,7 +27,6 @@ def react():
 
         try:
             if len(packet) > 0: 
-                # action has parameters
                 dispatch(action,*packet)
             else:
                 dispatch(action)

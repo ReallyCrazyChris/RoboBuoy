@@ -28,10 +28,10 @@ def getAlphasettings():
     server.send('state',alphasettingsmessage())  
 
 
-
 on('getState',getState)
 on('getPIDsettings', getPIDsettings)
 on('getMotorsettings', getMotorsettings)
-on('getAlphasettings', getAlphasettings)    
+on('getAlphasettings', getAlphasettings)
+ 
 
 

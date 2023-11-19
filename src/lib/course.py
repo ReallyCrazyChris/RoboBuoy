@@ -21,9 +21,11 @@ async def fuseGyroTask():
 
             # Integrate the gyro, update the current course
             _,_,gyro_z,deltaT = imu.readCalibractedGyro()
-            currentcourse = ( store.currentcourse + gyro_z * deltaT )
-            store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees TODO use a mutator ?
 
+            currentcourse = ( store.currentcourse + gyro_z * deltaT )
+
+            store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees TODO use a mutator ?
+            
             # steering angle PID controller
             error_1 = store.desiredcourse - store.currentcourse
             error_2 = 360 + error_1
@@ -33,9 +35,11 @@ async def fuseGyroTask():
                 store.error = error_1
 
             #update the integral error
-            store.errSum = store.errSum + (store.error * deltaT)
+            if store.Ki > 0:
+                store.errSum = store.errSum + (store.error * deltaT)
             #update the differential
-            store.dErr = (store.error - store.lastErr) / deltaT
+            if store.Kd > 0:
+                store.dErr = (store.error - store.lastErr) / deltaT
                 
             store.steer = constrain((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
             
@@ -54,12 +58,15 @@ async def fuseCompassTask():
         print('starting fuseCompassTask')
         while True:
             try:
-                await asyncio.sleep_ms(100)  
-                store.magcourse = imu.readMagHeading()
                 if store.magalpha > 0:
+                    await asyncio.sleep_ms(100)  
+                    store.magcourse = imu.readMagHeading()
                     # read magnetic compass heading
                     currentcourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * (store.magcourse + store.magdeclination)
                     store.currentcourse = normalize(currentcourse,-180,180) # clamp to -180 ... 180 degrees
+                else:
+                    await asyncio.sleep_ms(1000) 
+
             except MagDataNotReady:
                 # TODO, magnetometer is a resource that needs to be managed by a lock
                 pass    

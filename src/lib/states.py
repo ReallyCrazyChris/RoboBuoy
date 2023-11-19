@@ -2,19 +2,11 @@ import uasyncio as asyncio
 from lib.statemachine import State 
 from lib.motors import armMotorsCoroutine,driveTask
 from lib.auto import autoTask, holdTask
-from lib.imutasks import calibrateMagTask
 
-
-
+from lib.events import on
 from lib.store import Store
 from lib.storepersistance import loadsettings
 store = Store.instance()
-
-
-
-# Unused Movement States : Adrift, underWay, afloat, aground, obstacle ahead, ahoy, alongside, anchored, ashore, capsize,
-# Unused Indication States : beaconing, bell
-# Events: collusion
 
 class Init(State):
     ''' Initial State'''
@@ -29,6 +21,38 @@ class Init(State):
         loadimuconfig()
         loadsettings()
 
+        # bind actions to handlers
+        on('number', store.set_number)
+        on('type', store.set_type)
+        on('name', store.set_name)
+        on('color', store.set_color)
+        on('battery', store.set_battery)
+        on('positionvalid', store.set_positionvalid)
+        on('position', store.set_position)
+        on('gpscourse', store.set_gpscourse)
+        on('gpsspeed', store.set_gpsspeed)
+        on('magcourse', store.set_magcourse)
+        on('magdeclination', store.set_magdeclination)
+        on('currentcourse', store.set_currentcourse)
+        on('destination', store.set_destination)
+        on('distance', store.set_distance)
+        on('dc', store.set_desiredcourse)
+        on('wp', store.set_waypoints)
+        on('wr', store.set_waypointarrivedradius)
+        on('Kp', store.set_Kp)
+        on('Ki', store.set_Ki)
+        on('Kd', store.set_Kd)
+        on('gpsalpha', store.set_gpsalpha)
+        on('magalpha', store.set_magalpha)
+        on('declinationalpha', store.set_declinationalpha)
+        on('surge', store.set_surge)
+        on('steer', store.set_steer)
+        on('vmin', store.set_vmin)
+        on('vmax', store.set_vmax)
+        on('mpl', store.set_mpl)
+        on('mpr', store.set_mpr)
+        on('maxpwm', store.set_maxpwm)  
+
         # arm the motors
         await armMotorsCoroutine()
         # then go to state
@@ -42,7 +66,7 @@ class Stop(State):
     'RoboBuoy is Stopped'
     def __init__( self, sm ):
         self.name = 'stop'
-        self.sm = sm #statemachine
+        self.sm = sm #statemachine TODO find a way not not need this here !!
 
     def start(self):
         """Perform these actions when this state is first entered."""
@@ -55,7 +79,7 @@ class Stop(State):
         print('stop state exit')
 
     def validateTransition(self,statename):
-        if (statename in ['manual','hold','auto','calibratemag']): return statename        
+        if (statename in ['manual','hold','auto','calibratemag','calibrateaccel','calibrategyro']): return statename        
 
 
 class Auto(State):
@@ -119,18 +143,20 @@ class Manual(State):
 
 class CalibrateMag(State):
     ''' The Magnetic compass is calibrating'''
-    
+
     def __init__( self, sm ):
         self.name = 'calibratemag'
         self.sm = sm #statemachine
         self.driveTask=None
-        self.calibrateMagTask=None
 
     async def start(self):
+        from lib.storepersistance import savesettings
+        from lib.imutasks import calibrateMagTask
         from motors import driveMotors
         store.mode=self.name
         driveMotors(60,0)      
-        await calibrateMagTask()     
+        await calibrateMagTask()
+        savesettings()     
         self.transitionTo('stop')
 
     def end(self):
@@ -139,5 +165,41 @@ class CalibrateMag(State):
 
     def validateTransition(self,statename):
         if (statename in ['stop']): return statename
+
+class CalibrateAccel(State):
+    ''' The Accelerometer is calibrating'''
+
+    def __init__( self, sm ):
+        self.name = 'calibrateaccel'
+        self.sm = sm
+
+    async def start(self):
+        from lib.storepersistance import savesettings
+        from lib.imutasks import calibrateAccelTask
+        store.mode=self.name
+        await calibrateAccelTask()
+        savesettings()     
+        self.transitionTo('stop')
+
+    def validateTransition(self,statename):
+        if (statename in ['stop']): return statename    
+
+class CalibrateGyro(State):
+    ''' The Gyro is Calibrating '''
+
+    def __init__( self, sm ):
+        self.name = 'calibrategyro'
+        self.sm = sm
+
+    async def start(self):
+        from lib.storepersistance import savesettings
+        from lib.imutasks import calibrateGyroTask
+        store.mode=self.name
+        await calibrateGyroTask()
+        savesettings()     
+        self.transitionTo('stop')
+
+    def validateTransition(self,statename):
+        if (statename in ['stop']): return statename                
 
             

@@ -6,7 +6,6 @@ from struct import pack, unpack
 from math import atan2, degrees, sqrt, radians
 from lib.i2c import i2c
 from lib.store import Store
-
 store = Store.instance() #singleton reference
 
 class MagDataNotReady(Exception):
@@ -29,11 +28,11 @@ class IMU(object):
     def __init__( self ):
 
         # Configure settings from the store 
-        self.accelbias =  tuple(store.accelbias)
-        self.gyrobias =   tuple(store.gyrobias)
-        self.magbias =    tuple(store.magbias)
-        self.tempoffset = store.tempoffset
-        self.tempsensitivity = store.tempsensitivity
+        #self.accelbias =  tuple(store.accelbias)
+        #self.gyrobias =   tuple(store.gyrobias)
+        #self.magbias =    tuple(store.magbias)
+        #self.tempoffset = store.tempoffset
+        #self.tempsensitivity = store.tempsensitivity
 
         #AccelInit
         self.accel = (0,0,0) 
@@ -86,7 +85,7 @@ class IMU(object):
     def readCalibractedAccel(self):
         ''' apply the calibrated accel bias to the raw accel values'''
         x,y,z = self.readAccel()
-        xo, yo, zo = self.accelbias
+        xo, yo, zo = tuple(store.accelbias)
         return x-xo, y-yo, z-zo, self.deltat()  
 
     #Gyro
@@ -133,7 +132,7 @@ class IMU(object):
     def readCalibractedGyro(self):
         ''' apply the calibrated accel bias to the raw accel values'''
         x,y,z = self.readGyro()
-        xo, yo, zo = self.gyrobias
+        xo, yo, zo = tuple(store.gyrobias)
 
         return x-xo, y-yo, z-zo, self.deltat()        
 
@@ -195,7 +194,7 @@ class IMU(object):
 
     def readMagHeading(self):
         '''returns the magnetic heading in degrees:  -179 -> 180 degrees'''
-        x,y,_ = self.readMag( self.magbias )
+        x,y,_ = self.readMag( tuple(store.magbias) )
         return int(degrees(atan2(x,y)))
 
     #Temperature Sensor
@@ -204,7 +203,7 @@ class IMU(object):
         return temperature in deg Celcius
         """
         temp = unpack('>h',i2c.readfrom_mem(0x69, 0x41, 2)) 
-        temp = ((temp[0] - self.tempoffset) / self.tempsensitivity) + 21
+        temp = ((temp[0] - store.tempoffset) / store.tempsensitivity) + 21
 
         return temp
 

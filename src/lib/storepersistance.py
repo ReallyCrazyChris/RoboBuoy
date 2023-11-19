@@ -55,6 +55,7 @@ def savesettings():
     import json
     with open('settings.json', 'w') as file:
         json.dump(persistedstate(), file)
+        print('settings saved')
 
 def loadsettings():
     '''load persistedstate from flash'''
@@ -63,6 +64,7 @@ def loadsettings():
         with open('settings.json', 'r') as file:
             settings = json.load(file) 
             store.update(settings)
+            print('settings loaded')
     except Exception:
         pass
 

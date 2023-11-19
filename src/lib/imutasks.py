@@ -1,12 +1,14 @@
 import uasyncio as asyncio
 from lib.imu import IMU, MagDataNotReady
+from lib.store import Store
+store = Store.instance() #singleton reference
 imu = IMU()
 
 ########################################
 # Calibrate Magnetometer Async Task
 ########################################
 
-async def calibrateMagTask(samples:int=2000,delay:int=20) -> tuple:
+async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
     '''
     create magnetometer bias, normailization and scaling
     this is perferformed while the magnetomer is rotating around all axes
@@ -14,8 +16,8 @@ async def calibrateMagTask(samples:int=2000,delay:int=20) -> tuple:
     try:
         print('starting calibrateMagTask')
 
-        samples = int(samples) or 800
-        delay = int(delay) or 10
+        samples = int(samples) 
+        delay = int(delay) 
 
         minx = 0
         maxx = 0
@@ -68,12 +70,12 @@ async def calibrateMagTask(samples:int=2000,delay:int=20) -> tuple:
         print("scale",sx,sy,sz)
 
         # update the magbias
-        imu.magbias = (cx, cy, cz ,nx, ny, nz, sx, sy, sz) 
+        store.magbias = (cx, cy, cz ,nx, ny, nz, sx, sy, sz) 
         # save the imu settings (incle magbias)
-        imu.save()
+        #imu.save()
 
         return cx, cy, cz ,nx, ny, nz, sx, sy, sz
-        print( "completed calibrateMagTask" ) 
+    
     except asyncio.CancelledError:
         print( "stopping calibrateMagTask" ) 
 
@@ -89,7 +91,9 @@ async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
         print('starting calibrateAccelTask')
         
         ox, oy, oz = 0.0, 0.0, 0.0
-        n = float(samples) #TODO do we need float here ?
+        samples = int(samples) 
+        delay = int(delay) 
+        n = int(samples) 
 
         while samples:
             await asyncio.sleep_ms(delay)
@@ -102,11 +106,10 @@ async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
         # mean accel values
         ox,oy,oz = ox / n, oy / n, oz / n
         # update the accel bias
-        imu.accelbias = (ox,oy,oz)
-        # save the imu settings
-        imu.save()
+        store.accelbias = (ox,oy,oz)
 
-        print( "completed calibrateAccelTask" )
+        print("accel bias",store.accelbias)
+
 
         return ox,oy,oz 
 
@@ -120,9 +123,11 @@ async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
 async def calibrateGyroTask( samples:int=100, delay:int=10 ) -> tuple:
     ''' creates gyro averaged values for biasing the gyro at rest '''        
     try:
-        print('starting calibrateAccelTask')        
+        print('starting calibrateGyroTask')        
         ox, oy, oz = 0.0, 0.0, 0.0
-        n = float(samples)
+        samples = int(samples) 
+        delay = int(delay) 
+        n = int(samples)
 
         while samples:
             await asyncio.sleep_ms(delay)
@@ -136,13 +141,12 @@ async def calibrateGyroTask( samples:int=100, delay:int=10 ) -> tuple:
         ox,oy,oz = ox / n, oy / n, oz / n
 
         # update the gyro bias
-        imu.gyrobias = (ox,oy,oz)
+        store.gyrobias = (ox,oy,oz)
 
-        # save the settings
-        imu.save()
+        print("gyro bias",store.gyrobias)
 
         return ox,oy,oz  
     
     except asyncio.CancelledError:
-        print( "stopping calibrateAccelTask" ) 
+        print( "stopping calibrateGyroTask" ) 
     

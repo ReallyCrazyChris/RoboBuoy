@@ -20,7 +20,7 @@ def statemessage():
         "gpsspeed":store.gpsspeed,
         "magcourse":store.magcourse,
         "magdeclination":store.magdeclination,
-        "currentcourse":store.currentcourse,
+        "currentcourse":int(store.currentcourse),
         "destination":store.destination,
         "distance":store.distance,
         "desiredcourse":store.desiredcourse,
@@ -74,7 +74,7 @@ def statemessage_chunk2():
 def statemessage_chunk3():
     ''' state that changes when the robot is initalized '''
     return {
-        "currentcourse":store.currentcourse,
+        "currentcourse":int(store.currentcourse),
         "destination":store.destination,
         "distance":store.distance,
         "desiredcourse":store.desiredcourse,
@@ -135,7 +135,7 @@ def motionmessage():
         "gpsspeed":store.gpsspeed,
         "magcourse":store.magcourse,
         "magdeclination":store.magdeclination,
-        "currentcourse":store.currentcourse,
+        "currentcourse":int(store.currentcourse),
         #"destination":store.destination,
         #"distance":store.distance,
         "desiredcourse":store.desiredcourse,
@@ -181,7 +181,7 @@ def coursesettingsmessage():
         "gpsspeed":store.gpsspeed,
         "magcourse":store.magcourse,
         "magdeclination":store.magdeclination,
-        "currentcourse":store.currentcourse,
+        "currentcourse":int(store.currentcourse),
         #"destination":store.destination,
         #"distance":store.distance,
         "desiredcourse":store.desiredcourse,

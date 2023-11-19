@@ -4,7 +4,7 @@ from lib import server
 from lib import course
 from lib.gps import GPS
 from lib.statemachine import StateMachine
-from lib.states import Init, Stop, Manual, Hold, Auto, CalibrateMag
+from lib.states import Init, Stop, Manual, Hold, Auto, CalibrateMag, CalibrateAccel, CalibrateGyro
 
 from lib.events import on
 
@@ -33,6 +33,8 @@ async def mainTaskLoop():
     sm.addState(Hold)
     sm.addState(Auto)
     sm.addState(CalibrateMag)
+    sm.addState(CalibrateAccel)
+    sm.addState(CalibrateGyro)
     sm.setState('init')
     # recives mode change commands
     on('mode',sm.transitionTo)
