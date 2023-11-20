@@ -8,9 +8,6 @@ store = Store.instance()
 motorLeft = PWM(Pin(2))
 motorRight = PWM(Pin(13))
 
-#motorLeft = PWM(Pin(16))
-#motorRight = PWM(Pin(17))
-
 motorLeft.freq(50)
 motorRight.freq(50)
 motorLeft.duty(0)
@@ -34,6 +31,60 @@ def driveMotors(pwmleft=0,pwmright=0):
 def stopMotors():
     motorLeft.duty(0)
     motorRight.duty(0)  
+
+
+########################
+# Steering PID Controller
+async def pidTask():
+    ''' 
+    The goal of the PID controller is to get the robot to follow 
+    the desired course, considering the current course
+    '''
+    import utime
+    from lib.utils import constrain
+    # clear the error accumulators
+    store.errSum = 0
+    store.dErr = 0
+    startTime = utime.ticks_us()
+
+    try: 
+        print('starting pidTask')
+        while True:
+
+            await asyncio.sleep_ms(10)
+            currentTime = utime.ticks_us()
+            deltaT =  utime.ticks_diff(currentTime,startTime )/1000000
+            startTime = currentTime
+
+            # Discover the error the pid intends to correct
+            error_1 = store.desiredcourse - store.currentcourse
+            error_2 = 360 + error_1
+
+            # Choose the shortest rotation path to reduce the error
+            if abs(error_1) > abs(error_2):
+                store.error = error_2
+            else:
+                store.error = error_1
+
+            # update the integral error
+            if store.Ki > 0 :
+                store.errSum = store.errSum + (store.error * deltaT)
+            
+            # update the differential error
+            if store.Kd > 0:
+                store.dErr = (store.error - store.lastErr) / deltaT
+
+            # summate the PID and drive the output steering value    
+            store.steer = constrain((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
+            
+            #print(store.error, store.steer, deltaT)
+
+            # keep current error for the next PID cycle
+            store.lastErr = store.error
+  
+    except asyncio.CancelledError:
+        print( "stopping pidTask" )
+
 
 async def driveTask():
     ''' drive motors (steer in degrees -180..180 , surge in cm/s) '''
@@ -60,7 +111,7 @@ async def driveTask():
 
             #print('s',store.surge,' r',store.steer,' vl',vl,' vr',vr,' pl',pwm_left,' pr',pwm_right)
 
-            await asyncio.sleep_ms(10) #Try without
+            await asyncio.sleep_ms(20) #Try without
 
     except asyncio.CancelledError:  
             motorLeft.duty(0)

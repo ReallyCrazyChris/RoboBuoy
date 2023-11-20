@@ -23,7 +23,7 @@ async def mainTaskLoop():
     # Start the Tasks that keep the Robot on course
     asyncio.create_task( course.fuseGyroTask() )
     asyncio.create_task( course.fuseCompassTask() )
-    asyncio.create_task( course.fuseGpsTask() )
+    #asyncio.create_task( course.fuseGpsTask() )
     
     # Statemachine to manage the robots operational modes aka states
     sm = StateMachine()

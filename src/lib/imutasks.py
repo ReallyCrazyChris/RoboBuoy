@@ -6,8 +6,6 @@ imu = IMU()
 
 ########################################
 # Calibrate Magnetometer Async Task
-########################################
-
 async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
     '''
     create magnetometer bias, normailization and scaling
@@ -82,8 +80,6 @@ async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
 
 ########################################
 # Calibrate Accelerometer Task
-########################################
-
 async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
     ''' creates accelerometer averaged values for biasing the accelerometer at rest'''
         
@@ -118,8 +114,6 @@ async def calibrateAccelTask(samples:int=100,delay:int=10) -> tuple:
 
 ########################################
 # Calibrate Gyro Task
-########################################
-
 async def calibrateGyroTask( samples:int=100, delay:int=10 ) -> tuple:
     ''' creates gyro averaged values for biasing the gyro at rest '''        
     try:

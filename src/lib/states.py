@@ -1,6 +1,6 @@
 import uasyncio as asyncio
 from lib.statemachine import State 
-from lib.motors import armMotorsCoroutine,driveTask
+from lib.motors import armMotorsCoroutine,driveTask, pidTask
 from lib.auto import autoTask, holdTask
 
 from lib.events import on
@@ -15,10 +15,7 @@ class Init(State):
         self.sm = sm #statemachine
 
     async def start(self):
-        from lib.imupersistance import loadimuconfig
         store.mode=self.name
-        
-        loadimuconfig()
         loadsettings()
 
         # bind actions to handlers
@@ -88,15 +85,18 @@ class Auto(State):
         self.name = 'auto'
         self.sm = sm #statemachine
         self.driveTask = None
+        self.pidTask = None
         self.autoTask  = None
        
     def start(self):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
+        self.pidTask = asyncio.create_task( pidTask() )
         self.autoTask = asyncio.create_task( autoTask() )
 
     def end(self):
         self.autoTask.cancel()
+        self.pidTask.cancel()
         self.driveTask.cancel()
 
     def validateTransition(self,statename):
@@ -108,15 +108,18 @@ class Hold(State):
         self.name = 'hold'
         self.sm = sm #statemachine
         self.driveTask = None
+        self.pidTask = None
         self.holdTask  = None
        
     def start(self):
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
+        self.pidTask = asyncio.create_task( pidTask() )
         self.holdTask = asyncio.create_task( holdTask() )
 
     def end(self):
         self.holdTask.cancel()
+        self.pidTask.cancel()
         self.driveTask.cancel()
 
     def validateTransition(self,statename):
@@ -127,15 +130,19 @@ class Manual(State):
     def __init__( self ,sm ):
         self.name = 'manual'
         self.sm = sm #statemachine
-        self.driveTask=None
+        self.driveTask = None
+        self.pidTask = None
+
 
     def start(self):
         store.mode=self.name
         store.desiredcourse = store.currentcourse
         self.driveTask = asyncio.create_task( driveTask() )
+        self.pidTask = asyncio.create_task( pidTask() )
 
     def end(self):
         self.driveTask.cancel()  
+        self.pidTask.cancel()
 
     def validateTransition(self,statename):
         if (statename in ['stop','hold','auto']): return statename
