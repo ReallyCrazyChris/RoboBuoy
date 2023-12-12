@@ -50,7 +50,6 @@ async def fuseCompassTask():
                     #print('compassAdjustedCourse',compassAdjustedCourse)
                     store.currentcourse = normalize(compassAdjustedCourse,-180,180) # clamp to -180 ... 180 degrees
 
-
             except MagDataNotReady:
                 # TODO, magnetometer is a resource that needs to be managed by a lock
                 pass    

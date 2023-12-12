@@ -40,7 +40,7 @@ async def autoTask():
             
             else: # when there are no more waypoint to follow : hold station
                 store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
-                store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
+                store.surge = min(store.vmax, store.holdgain * store.distance * store.distance)
                 print('auto-hold: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge, len(store.waypoints))
                 
             await gps.positionAvailable.wait()
@@ -64,7 +64,7 @@ async def holdTask():
         while True:
             #  hold station
             store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
-            store.surge = min(store.vmax, 0.5 * store.distance * store.distance)
+            store.surge = min(store.vmax, store.holdgain * store.distance * store.distance)
             print('hold: distance, bearing, surge, waypoints',store.distance, store.desiredcourse, store.surge)
             await gps.positionAvailable.wait()           
     except asyncio.CancelledError:

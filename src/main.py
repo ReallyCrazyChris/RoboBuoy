@@ -41,7 +41,6 @@ async def mainTaskLoop():
 
     #TODO I dont like this. it looks very pointless
     # Actually these need to go in the states they are used in
-    import lib.storehandlers
     import lib.storerequests
 
     # Keep the mainTaskLoop running forever    

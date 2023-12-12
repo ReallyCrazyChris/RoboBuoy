@@ -41,6 +41,7 @@ class Store(object):
         self.desiredcourse = 0   # deg° of the desired heading
         self.waypoints = []      # [(str,str)] degree decimal 9 digit precision
         self.waypointarrivedradius = 2 # waypoint arrived radius (meters)
+        self.holdgain = 0.5 # This effects the robots speed to a hold waypoint 
         # Steering
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
         self.Kp = 1
@@ -60,6 +61,7 @@ class Store(object):
         # Motor State - never set these directly
         self.surge = 0 #  desired robot speed cm/s
         self.steer = 0 #  desired robot angualr rotation deg/s
+        self.steergain = 1
         self.vmin = 0  #  minimum robot velocity cm/s
         self.vmax = 20 #  maximum robot velocity cm/s
         self.mpl = 53  #  left pwm value where the motor starts to turn
@@ -223,7 +225,15 @@ class Store(object):
 
     @waypointarrivedradius.setter
     def waypointarrivedradius(self, value):
-        self._waypointarrivedradius = int(value)
+        self._waypointarrivedradius = float(value)
+
+    @property
+    def holdgain(self):
+        return self._holdgain
+
+    @holdgain.setter
+    def holdgain(self, value):
+        self._holdgain = float(value)
 
     @property
     def Kp(self):
@@ -289,6 +299,13 @@ class Store(object):
     def steer(self, value):
         self._steer = float(value)
 
+    @property
+    def steergain(self):
+        return self._steergain
+
+    @steergain.setter
+    def steergain(self, value):
+        self._steergain = float(value)
 
     @property
     def vmin(self):
@@ -386,6 +403,9 @@ class Store(object):
     def set_waypointarrivedradius(self, value):
         self.waypointarrivedradius = value
 
+    def set_holdgain(self, value):
+        self.holdgain = value        
+
     def set_Kp(self, value):
         self.Kp = value
 
@@ -422,6 +442,9 @@ class Store(object):
     def set_steer(self, value):
         self.steer = value
 
+    def set_steergain(self, value):
+        self.steergain = value
+        
     def set_vmin(self, value):
         self.vmin = value
 

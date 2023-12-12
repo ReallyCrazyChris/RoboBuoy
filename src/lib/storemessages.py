@@ -26,6 +26,7 @@ def statemessage():
         "desiredcourse":store.desiredcourse,
         "waypoints":store.waypoints,
         "waypointarrivedradius":store.waypointarrivedradius,
+        "holdgain":store.holdgain,
         "Kp":store.Kp,
         "Ki":store.Ki,
         "Kd":store.Kd,
@@ -38,6 +39,7 @@ def statemessage():
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
         "steer":store.steer,
+        "steergain":store.steergain,
         "vmin":store.vmin,
         "vmax":store.vmax,
         "mpl":store.mpl,
@@ -85,6 +87,7 @@ def statemessage_chunk4():
     return {
         "waypoints":store.waypoints,
         "waypointarrivedradius":store.waypointarrivedradius,
+        "holdgain":store.holdgain,
     }
 
 def statemessage_chunk5():
@@ -107,6 +110,7 @@ def statemessage_chunk6():
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
         "steer":store.steer,
+        "steergain":store.steergain,
     }
 
 def statemessage_chunk7():
@@ -141,6 +145,7 @@ def motionmessage():
         "desiredcourse":store.desiredcourse,
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
+        #"holdgain":store.holdgain,
         #"Kp":store.Kp,
         #"Ki":store.Ki,
         #"Kd":store.Kd,
@@ -153,6 +158,7 @@ def motionmessage():
         #"declinationalpha":store.declinationalpha,
         "surge":store.surge,
         #"steer":store.steer,
+        #"steergain":store.steergain,
         #"vmin":store.vmin,
         #"vmax":store.vmax,
         #"mpl":store.mpl,
@@ -165,6 +171,8 @@ def waypointmessage():
     return {
         "waypoints":store.waypoints,
     }
+
+
 
 def coursesettingsmessage():
     ''' state that changes with the robots course settings '''
@@ -187,6 +195,7 @@ def coursesettingsmessage():
         "desiredcourse":store.desiredcourse,
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
+        #"holdgain":store.holdgain,
         #"Kp":store.Kp,
         #"Ki":store.Ki,
         #"Kd":store.Kd,
@@ -199,11 +208,20 @@ def coursesettingsmessage():
         #"declinationalpha":store.declinationalpha,
         "surge":store.surge,
         #"steer":store.steer,
+        #"steergain":store.steergain,
         #"vmin":store.vmin,
         #"vmax":store.vmax,
         #"mpl":store.mpl,
         #"mpr":store.mpr,
         #"maxpwm":store.maxpwm,
+    }
+
+
+def holdsettingsmessage():
+    ''' configuraiton parameters for holding station'''
+    return {
+        "waypointarrivedradius":store.waypointarrivedradius,
+        "holdgain":store.holdgain,
     }
 
 def pidsettingsmessage():
@@ -212,11 +230,13 @@ def pidsettingsmessage():
         "Kp":store.Kp,
         "Ki":store.Ki,
         "Kd":store.Kd,
+   
     }
 
 def motorsettingsmessage():
     ''' state that changes when the robot steering setting change '''
     return {
+        "steergain":store.steergain,
         "vmin":store.vmin,
         "vmax":store.vmax,
         "mpl":store.mpl,
@@ -231,6 +251,9 @@ def alphasettingsmessage():
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
     }
+
+
+
 
 
 def magnetometermessage():

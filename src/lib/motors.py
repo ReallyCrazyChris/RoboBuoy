@@ -56,15 +56,15 @@ async def pidTask():
             deltaT =  utime.ticks_diff(currentTime,startTime )/1000000
             startTime = currentTime
 
-            # Discover the error the pid intends to correct
-            error_1 = store.desiredcourse - store.currentcourse
-            error_2 = 360 + error_1
-
-            # Choose the shortest rotation path to reduce the error
-            if abs(error_1) > abs(error_2):
-                store.error = error_2
+            # Choose the shortest direction rotation
+            error = store.desiredcourse - store.currentcourse
+            
+            if abs(error) <= 180:
+               store.error = error
+               #print("_cw",store.error)
             else:
-                store.error = error_1
+               store.error = error - 360
+               #print("ccw",store.error)
 
             # update the integral error
             if store.Ki > 0 :
@@ -92,8 +92,8 @@ async def driveTask():
         print('starting driveMotorsTask')
         while 1:
 
-            vl = (2*store.surge + radians(store.steer)) / 2
-            vr = (2*store.surge - radians(store.steer)) / 2
+            vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
+            vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
 
             # clamp max and min motor speeds  
             vl = min(store.vmax,vl)
