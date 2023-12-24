@@ -119,6 +119,30 @@ async def driveTask():
             print( "stopping driveMotorsTask") 
 
         
-          
+'''
+from machine import PWM, Pin
+import time
+motorLeft = PWM(Pin(2))
+motorRight = PWM(Pin(13))
+motorLeft.freq(500)
+motorRight.freq(500)
+motorLeft.duty(0)
+motorRight.duty(0)
+  
+def arm():
+    motorLeft.duty(512)
+    motorRight.duty(512)}ß´üp
+    time.sleep(0.1)
+    motorLeft.duty(767)
+    motorRight.duty(767) 
+      
+def drive(pwmleft=0,pwmright=0):
+    motorLeft.duty(pwmleft)
+    motorRight.duty(pwmright)
+def stop():
+    motorLeft.duty(0)
+    motorRight.duty(0)
+
+'''          
 
      

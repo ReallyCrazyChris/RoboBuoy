@@ -31,7 +31,8 @@ def react():
             else:
                 dispatch(action)
         except TypeError as e:
-            raise TypeError(str(e),' while processing to',action,packet)
+            raise TypeError(str(e), ' while processing to', action, packet)
+
 
 async def receiveTask():
     ''' receives messages via bluetooth and adds them to the receive queue '''
@@ -39,8 +40,8 @@ async def receiveTask():
     try:
         while True:
             if bleuart.message != None:
-                receive( bleuart.message )
-                react() #TODO this may need its own async co-routine
+                receive(bleuart.message)
+                react()  # TODO this may need its own async co-routine
             # clear processed message          
             bleuart.message = None
             await bleuart.received_flag.wait()

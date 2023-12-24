@@ -7,4 +7,5 @@ inserted into the water.
 Using Gyro, Accelerometer, Compass and GPS Modules to for the sensor Array. 
 Using Differntial Drive BLDC Thrusters to control the yaw and surge of the vehile
 Using Bluetooh for Configuration
+Using Lora for Long Distance Control
 
