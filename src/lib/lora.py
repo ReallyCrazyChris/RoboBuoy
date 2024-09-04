@@ -1,6 +1,12 @@
-import gc
+
+import uasyncio as asyncio
 from machine import Pin
 from time import sleep_ms
+from lib.spi import spi,cs,rx,rst
+from lib.bencode import decodeTransformer, encodeTransformer
+from lib.server import receive,sendqueue
+import gc
+
 
 TX_BASE_ADDR = 0x00
 RX_BASE_ADDR = 0x00
@@ -46,16 +52,26 @@ IRQ_TX_DONE_MASK = 0x08
 IRQ_PAYLOAD_CRC_ERROR_MASK = 0x20
 
 MAX_PKT_LENGTH = 255
+MTU = MAX_PKT_LENGTH - TX_BASE_ADDR
 
-class LoRa:
+class Lora:
 
-    def __init__(self, spi, **kw):
-        self.spi = spi
-        self.cs = kw['cs']
-        self.rx = kw['rx']
-        while self._read(REG_VERSION) != 0x12:
-            time.sleep_ms(100)
-            #raise Exception('Invalid version or bad SPI connection')
+    def __init__(self, **kw):
+        self.spi = kw.get('spi', spi)
+        self.cs = kw.get('cs', cs)
+        self.rx = kw.get('rx', rx)
+        self.rst = kw.get('rst', rst)
+        
+        self.loraReceivedFlag = asyncio.ThreadSafeFlag()
+
+        self.receivequeue = []
+        
+
+        #while self._read(REG_VERSION) != 0x12:
+        #    print('Warning: invalid lora chip version or bad SPI connection')
+        #    raise Exception('Invalid version or bad SPI connection')
+   
+        self.reset_tranciever()
         self.sleep()
         self.set_frequency(kw.get('frequency', 433.1))
         self.set_bandwidth(kw.get('bandwidth', 250000))
@@ -69,41 +85,53 @@ class LoRa:
         self._write(REG_MODEM_CONFIG_3, 0x00)
         self.set_tx_power(kw.get('tx_power', 24))
         self._implicit = kw.get('implicit', False)
-        self.set_implicit(self._implicit)
+        self.set_implicit(self._implicit) 
         self.set_sync_word(kw.get('sync_word', 0x12))
         self._on_recv = kw.get('on_recv', None)
         self._write(REG_FIFO_TX_BASE_ADDR, TX_BASE_ADDR)
         self._write(REG_FIFO_RX_BASE_ADDR, RX_BASE_ADDR)
         self.standby()
 
+    def reset_tranciever(self):
+        self.rst.value(1) 
+        sleep_ms(1)  
+        self.rst.value(0)  
+        sleep_ms(1) 
+        self.rst.value(1) 
+        sleep_ms(10) 
+        self._read(REG_VERSION)
+        self._read(REG_VERSION)
+
     def begin_packet(self):
         self.standby()
         self._write(REG_FIFO_ADDR_PTR, TX_BASE_ADDR)
         self._write(REG_PAYLOAD_LENGTH, 0)
 
-    def end_packet(self):
-        self._write(REG_OP_MODE, MODE_LORA | MODE_TX)
-        while (self._read(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0:
-            pass
-        self._write(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK)
-        gc.collect()
-
     def write_packet(self, b):
         n = self._read(REG_PAYLOAD_LENGTH)
         m = len(b)
-        p = MAX_PKT_LENGTH - TX_BASE_ADDR
+        p = MTU
         if n + m > p:
             raise ValueError('Max payload length is ' + str(p))
         for i in range(m):
             self._write(REG_FIFO, b[i])
         self._write(REG_PAYLOAD_LENGTH, n + m)
 
-    def send(self, x):
-        if isinstance(x, str):
-            x = x.encode()
-        self.begin_packet()
-        self.write_packet(x)
-        self.end_packet()
+    async def end_packet(self):
+        self._write(REG_OP_MODE, MODE_LORA | MODE_TX)
+        while (self._read(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0:
+            await asyncio.sleep_ms(0)
+        self._write(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK)
+        gc.collect()
+
+    async def send(self, x):
+        #if isinstance(x, str):
+            #x = x.encode()
+        generator = encodeTransformer(x ,MTU)
+        for chunk in generator:
+            self.begin_packet()
+            self.write_packet(chunk)
+            await self.end_packet()
 
     def _get_irq_flags(self):
         f = self._read(REG_IRQ_FLAGS)
@@ -204,6 +232,7 @@ class LoRa:
     def recv(self):
         self._write(REG_OP_MODE, MODE_LORA | MODE_RX_CONTINUOUS) 
 
+
     def _irq_recv(self, event_source):
         f = self._get_irq_flags()
         if f & IRQ_PAYLOAD_CRC_ERROR_MASK == 0:
@@ -236,3 +265,81 @@ class LoRa:
 
     def _write(self, addr, x):
         self._transfer(addr | 0x80, x)
+
+
+    async def sendTask(self):
+        ''' reads messages from the server send queue and sends them via lora '''
+        print('starting lora sendTask')
+
+        try:
+            while True:    
+                if len(sendqueue) > 0:
+
+                    packet = sendqueue.pop()
+                    
+                    generator = encodeTransformer(packet, MTU)
+                    for chunk in generator:
+                        self.begin_packet()
+                        print('sendChunk',chunk)
+                        self.write_packet(chunk)
+                        await self.end_packet()
+
+                await asyncio.sleep_ms(1000)          
+
+        except asyncio.CancelledError:
+            print('stopping lora sendTask')  
+
+
+    def irq_receive(self, event_source):
+        f = self._get_irq_flags()
+        if f & IRQ_PAYLOAD_CRC_ERROR_MASK == 0:
+            self.loraReceivedFlag.set()
+
+    async def receiveTask(self):
+        ''' receives packets via lora and adds them to the receive queue, then processes the packets '''
+
+        print('starting lora receiveTask')
+        decodeChunk = decodeTransformer(receive,conn_handle="lora")
+        self._write(REG_DIO_MAPPING_1, 0x00)
+        self.rx.irq(handler=self.irq_receive, trigger=Pin.IRQ_RISING)
+        self._write(REG_OP_MODE, MODE_LORA | MODE_RX_CONTINUOUS) 
+        
+        try:
+            while True:
+                await self.loraReceivedFlag.wait()
+                f = self._get_irq_flags()
+                if f & IRQ_PAYLOAD_CRC_ERROR_MASK == 0:
+                    decodeChunk(self._read_payload())
+                self.loraReceivedFlag.clear()
+                           
+        except asyncio.CancelledError:
+            self.standby()
+            self.rx.irq(handler=None, trigger=0)
+            self.loraReceivedFlag.clear()
+            print('stoping lora receiveTask')             
+
+    async def tranciever(self):
+
+        decodeChunk = decodeTransformer(receive,conn_handle="lora")
+'''
+
+        try:
+            while True:
+
+                i am not in the process of receiving a message
+                is there something to send
+                wait a random period
+                is the channel clear 
+                transmit
+
+                await completeincomingmessage
+                
+
+
+
+
+               
+                           
+        except asyncio.CancelledError:
+            print('stoping lora receiveTask')     
+'''
