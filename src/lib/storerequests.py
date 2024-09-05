@@ -16,7 +16,7 @@ def getState():
     server.send('state',statemessage_chunk4())
     server.send('state',statemessage_chunk5())
     server.send('state',statemessage_chunk6())
-    server.send('state',statemessage_chunk6())
+
 
 def getHoldsettings(): 
     server.send('state',holdsettingsmessage())   

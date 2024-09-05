@@ -42,7 +42,7 @@ async def fuseCompassTask():
         while True:
             try:
                 await asyncio.sleep_ms(100)
-                store.magcourse = imu.readMagHeading() + + store.magdeclination  
+                store.magcourse = imu.readMagHeading() + store.magdeclination  
                 
                 if store.magalpha > 0:
                     # read magnetic compass heading

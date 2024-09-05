@@ -60,7 +60,6 @@ class Init(State):
     def validateTransition(self,statename):
         if (statename in ['stop']): return statename
 
-
 class Stop(State):
     'RoboBuoy is Stopped'
     def __init__( self, sm ):
@@ -79,7 +78,6 @@ class Stop(State):
 
     def validateTransition(self,statename):
         if (statename in ['manual','hold','auto','calibratemag','calibrateaccel','calibrategyro']): return statename        
-
 
 class Auto(State):
 
@@ -148,7 +146,6 @@ class Manual(State):
 
     def validateTransition(self,statename):
         if (statename in ['stop','hold','auto']): return statename
-
 
 class CalibrateMag(State):
     ''' The Magnetic compass is calibrating'''
