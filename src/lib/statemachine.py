@@ -28,7 +28,7 @@ class StateMachine(object):
         if self.activeState is not None:
             self.activeState.end()
         self.activeState = self.states[new_state_name]
-        print('start state',new_state_name)
+        print('set state',new_state_name)
         self.activeState.__start__()
 
 

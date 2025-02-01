@@ -68,13 +68,13 @@ class Stop(State):
 
     def start(self):
         """Perform these actions when this state is first entered."""
-        print('stop state entry')
+        print('enter: stop state ')
         store.mode = self.name
         store.surge = 0
 
     def end(self):
         """Perform these actions when this state is exited."""
-        print('stop state exit')
+        print('exit: stop state')
 
     def validateTransition(self,statename):
         if (statename in ['manual','hold','auto','calibratemag','calibrateaccel','calibrategyro']): return statename        
