@@ -8,12 +8,11 @@ gps = GPS()
 async def testgps(): 
     # ARM
     print(' gps read')
-    gps.readGpsTask()
-    while not gps.positionAvailable.is_set():
-        print('   gps - waiting for position')
-        await asyncio.sleep(500)
+    gpsTask = asyncio.create_task( gps.readGpsTask() )
+    await asyncio.sleep(1500)
     print('   gps - lat,lon ',store.position)
     print(' gps read done')
+    gpsTask.cancel()
 
 
 
