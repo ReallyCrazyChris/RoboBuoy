@@ -82,7 +82,7 @@ class IMU(object):
 
         return x,y,z
 
-    def readCalibractedAccel(self):
+    def readCalibratedAccel(self):
         ''' apply the calibrated accel bias to the raw accel values'''
         x,y,z = self.readAccel()
         xo, yo, zo = tuple(store.accelbias)
@@ -129,7 +129,7 @@ class IMU(object):
 
         return x,y,z         
 
-    def readCalibractedGyro(self):
+    def readCalibratedGyro(self):
         ''' apply the calibrated accel bias to the raw accel values'''
         x,y,z = self.readGyro()
         xo, yo, zo = tuple(store.gyrobias)

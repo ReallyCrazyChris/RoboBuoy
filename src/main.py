@@ -14,16 +14,16 @@ gps = GPS()
 async def mainTaskLoop():
 
     # Start the Tasks that must always run
-    asyncio.create_task( server.receiveTask() )
-    asyncio.create_task( server.sendTask() )
-    asyncio.create_task( server.advertiseTask() )
+    asyncio.create_task( server.receiveTask() ) # listen for incoming messages
+    asyncio.create_task( server.sendTask() )    # send messages to clients
+    asyncio.create_task( server.advertiseTask() ) # announce our presence to the network
     asyncio.create_task( gps.readGpsTask() )
-    asyncio.create_task( sendMotionMessageTask() )
+    asyncio.create_task( sendMotionMessageTask() )  # publich motion messages to clients
 
     # Start the Tasks that keep the Robot on course
-    asyncio.create_task( course.fuseGyroTask() )
-    asyncio.create_task( course.fuseCompassTask() )
-    #asyncio.create_task( course.fuseGpsTask() )
+    asyncio.create_task( course.fuseGyroTask() ) #
+    asyncio.create_task( course.fuseCompassTask() ) # fuse compass data into the gyro data
+    asyncio.create_task( course.fuseGpsTask() ) 
     
     # Statemachine to manage the robots operational modes aka states
     sm = StateMachine()
@@ -36,7 +36,7 @@ async def mainTaskLoop():
     sm.addState(CalibrateAccel)
     sm.addState(CalibrateGyro)
     sm.setState('init')
-    # recives mode change commands
+    # mode change listener 
     on('mode',sm.transitionTo)
 
     #TODO I dont like this. it looks very pointless

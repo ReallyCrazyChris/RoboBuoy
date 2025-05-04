@@ -64,7 +64,7 @@ class Store(object):
         self.steergain = 1
         self.vmin = 0  #  minimum robot velocity cm/s
         self.vmax = 20 #  maximum robot velocity cm/s
-        self.mpl = 53  #  left pwm value where the motor starts to turn
+        self.mpl = 55  #  left pwm value where the motor starts to turn
         self.mpr = 55  #  right pwm value where the motor starts to turn
         self.maxpwm = 110 # maximum pwm signal sent to the motors
 

@@ -20,7 +20,7 @@ async def fuseGyroTask():
         while True:
 
             # Integrate the gyro, update the current course
-            _,_,gyro_z,deltaT = imu.readCalibractedGyro()
+            _,_,gyro_z,deltaT = imu.readCalibratedGyro()
 
             gyroAdjustedCourse = ( store.currentcourse + gyro_z * deltaT )
 

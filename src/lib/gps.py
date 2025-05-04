@@ -61,7 +61,7 @@ class GPS(object):
     ########################################
 
     async def readGpsTask(self):
-        '''fuses the gps course with the currentcourse using a complement filter, strongly weighted towards the gps'''
+        ''' read and parse the gps string and update gps state'''
         try:
             print('starting readGpsTask')
             while True:
@@ -130,6 +130,8 @@ class GPS(object):
 
                 latitude =  convert_dm_dd(lat_degs, lat_mins, lat_hemi)
                 longitude = convert_dm_dd(lon_degs, lon_mins, lon_hemi)  
+
+          
 
                 store.position = (latitude, longitude)
                 store.positionvalid = True
