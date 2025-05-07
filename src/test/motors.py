@@ -8,31 +8,33 @@ async def testmotors():
     
     # ARM
     print(' arm motors')
-    await motors.armMotorsCoroutine()
+    motors.armMotors()
+    await asyncio.sleep_ms(1000) # wait for the motors to be armed
     print(' arm motors done')
 
-    await asyncio.sleep_ms(3000) 
 
     # Left Motor
-    print(' drive left motor : minimum forward speed')
-    motors.driveMotors(store.mpl,0)
+    print(' drive left motor : minimum forward speed',store.minPwmLeft)
+    motors.driveMotors(store.minPwmLeft,0)
     await asyncio.sleep_ms(3000) 
-    print(' drive left motor : maximum forward speed')
+    print(' drive left motor : maximum forward speed',store.maxpwm)
     motors.driveMotors(store.maxpwm,0)
     await asyncio.sleep_ms(3000) 
     motors.stopMotors()
     print(' stop motors')
 
-    await asyncio.sleep_ms(3000) 
+
 
     # Right Motor
-    print(' drive right motor : minimum forward speed')
-    motors.driveMotors(0,store.mpr)
+    print(' drive right motor : minimum forward speed',store.minPwmRight)
+    motors.driveMotors(0,store.minPwmRight)
     await asyncio.sleep_ms(3000) 
-    print(' drive right motor : maximum forward speed')
+    print(' drive right motor : maximum forward speed',store.maxpwm)
     motors.driveMotors(0,store.maxpwm)
     await asyncio.sleep_ms(3000) 
     motors.stopMotors()
     print(' stop motors')
   
-  
+    print(' disarm motors')
+    motors.disarmMotors()
+    print(' disarm motors done')

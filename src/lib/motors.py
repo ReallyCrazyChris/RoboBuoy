@@ -5,32 +5,76 @@ from lib.store import Store
 store = Store.instance()
 
 # PWM control of ESC motor controlers 
-motorLeft = PWM(Pin(2))
-motorRight = PWM(Pin(13))
+motorLeft = None
+motorRight = None
 
-motorLeft.freq(50)
-motorRight.freq(50)
-motorLeft.duty(0)
-motorRight.duty(0)   
-        
 async def armMotorsCoroutine():
-    ''' arm esc motor controllers '''     
-    motorLeft.duty(40)
-    motorRight.duty(40)
-    await asyncio.sleep_ms(1000) 
-    motorLeft.duty(115)
-    motorRight.duty(115)
-    await asyncio.sleep_ms(1000) 
-    motorLeft.duty(0)
-    motorRight.duty(0) 
+    armMotors()
+    await asyncio.sleep_ms(1000) # wait for the motors to be armed
+    # set the duty cycle to the minimum value
 
-def driveMotors(pwmleft=0,pwmright=0):
-    motorLeft.duty(pwmleft)
-    motorRight.duty(pwmright)  
-     
+
+def armMotors():
+    ''' arm the motors '''
+    global motorLeft
+    global motorRight
+
+    if motorLeft is None and motorRight is None:
+        print(' arm motors')
+        # set the duty cycle to the minimum value
+        store.minPwmLeft = store.minPwmLeft if store.minPwmLeft > 0 else 3712
+        store.minPwmRight = store.minPwmRight if store.minPwmRight > 0 else 3712
+        # create the PWM objects for the motors
+        motorLeft = PWM(Pin(2),  freq=50)
+        motorRight = PWM(Pin(13), freq=50)
+        motorLeft.duty_u16(store.minPwmLeft)
+        motorRight.duty_u16(store.minPwmRight)
+
+def disarmMotors():
+    ''' disarm the motors '''
+    global motorLeft
+    global motorRight
+
+    if motorLeft is not None and motorRight is not None:
+        print(' disarm motors')
+        # set the duty cycle to the minimum value
+        motorLeft.duty_u16(0)
+        motorRight.duty_u16(0)
+        motorLeft.deinit()
+        motorRight.deinit()
+        motorLeft = None
+        motorRight = None        
+
+def translateSpeedPWM(speed,minSpeed,maxSpeed,minPWM,maxPWM):
+    ''' Translate speed to PWM value '''
+    # motor speed is between 0 and 1
+    # pwm is between minPWM and maxPWM
+    speed = min(maxSpeed, max(minSpeed, speed)) # clamp to min and max speed
+
+    # map speed to pwm
+    pwm =(speed-minSpeed)/(maxSpeed-minSpeed)*(maxPWM-minPWM)+minPWM
+    return int(pwm)
+
+
+
+
+def driveMotors(vl=0,vr=0):
+    ''' drive the motors with the given speed '''
+    # clamp max and min motor speeds  
+    _vl = min(store.vmax, max(store.vmin, vl)) 
+    _vr = min(store.vmax, max(store.vmin, vr)) 
+
+    # Translate the speed to a PWM value
+    pwmLeft = translateSpeedPWM(_vl,store.vmin,store.vmax,store.minPwmLeft,store.maxpwm)
+    pwmRight = translateSpeedPWM(_vr,store.vmin,store.vmax,store.minPwmRight,store.maxpwm)
+
+    # Drive the motors
+    motorLeft.duty_u16(pwmLeft)
+    motorRight.duty_u16(pwmRight)
+
 def stopMotors():
-    motorLeft.duty(0)
-    motorRight.duty(0)  
+    motorLeft.duty_u16(0) 
+    motorRight.duty_u16(0)  
 
 
 ########################
@@ -69,16 +113,22 @@ async def pidTask():
             # update the integral error
             if store.Ki > 0 :
                 store.errSum = store.errSum + (store.error * deltaT)
-            
+                # TODO antiwindup - limit the output of the integral term
+
+   
             # update the differential error
             if store.Kd > 0:
                 store.dErr = (store.error - store.lastErr) / deltaT
 
-            # summate the PID and drive the output steering value    
+            # summate the PID 
+            # contrain the output to the range of the steering -180 .. 180
+            # drive the output steering value    
             store.steer = constrain((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
             
-            #print(store.error, store.steer, deltaT)
+            #print table of the PID values, with fixed table widths
+            print("Kp: %5.2f Ki: %5.2f Kd: %5.2f err: %5.2f errSum: %5.2f dErr: %5.2f steer: %5.2f" % (store.Kp, store.Ki, store.Kd, store.error, store.errSum, store.dErr, store.steer))
 
+    
             # keep current error for the next PID cycle
             store.lastErr = store.error
   
@@ -92,57 +142,17 @@ async def driveTask():
         print('starting driveMotorsTask')
         while 1:
 
-            vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
-            vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
+            #vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
+            #vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
 
-            # clamp max and min motor speeds  
-            vl = min(store.vmax,vl)
-            vl = max(store.vmin,vl)
-            vr = min(store.vmax,vr)
-            vr = max(store.vmin,vr)
+            vl = (2*store.surge + radians(store.steer)) / 2
+            vr = (2*store.surge - radians(store.steer)) / 2
 
-            pwm_left = (vl - store.vmin) * (store.maxpwm - store.mpl) / (100 - store.vmin) + store.mpl
-            pwm_left = int(pwm_left)
-            motorLeft.duty(pwm_left)
-    
-            pwm_right = (vr - store.vmin) * (store.maxpwm - store.mpr) / (100 - store.vmin) + store.mpr
-            pwm_right = int(pwm_right)
-            motorRight.duty(pwm_right)
-
-            #print('s',store.surge,' r',store.steer,' vl',vl,' vr',vr,' pl',pwm_left,' pr',pwm_right)
-
-            await asyncio.sleep_ms(20) #Try without
+            driveMotors(vl,vr)
+            await asyncio.sleep_ms(20) # TODO Try without this delay 
 
     except asyncio.CancelledError:  
-            motorLeft.duty(0)
-            motorRight.duty(0)  
+            stopMotors()
             print( "stopping driveMotorsTask") 
 
-        
-'''
-from machine import PWM, Pin
-import time
-motorLeft = PWM(Pin(2))
-motorRight = PWM(Pin(13))
-motorLeft.freq(500)
-motorRight.freq(500)
-motorLeft.duty(0)
-motorRight.duty(0)
-  
-def arm():
-    motorLeft.duty(512)
-    motorRight.duty(512)}ß´üp
-    time.sleep(0.1)
-    motorLeft.duty(767)
-    motorRight.duty(767) 
-      
-def drive(pwmleft=0,pwmright=0):
-    motorLeft.duty(pwmleft)
-    motorRight.duty(pwmright)
-def stop():
-    motorLeft.duty(0)
-    motorRight.duty(0)
-
-'''          
-
-     
+ 

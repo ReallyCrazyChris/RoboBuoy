@@ -26,7 +26,7 @@ async def fuseGyroTask():
 
             store.currentcourse = normalize(gyroAdjustedCourse,-180,180) # clamp to -180 ... 180 degrees TODO use a mutator ?
             
-            
+
 
             await asyncio.sleep_ms(20)  
     except asyncio.CancelledError:

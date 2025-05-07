@@ -23,7 +23,7 @@ class Store(object):
         self.type = "mark"
         self.name = "Einstein"  #Name of the RoboBupy in the APP
         self.color= "green-13" #Primary Color of the Mark Chartreuse
-        self.mode = "stop"  #Current operational mode of the RoboBouy  ['stop','manual','auto',...]
+        self.mode = "init"  #Current operational mode of the RoboBouy  ['stop','manual','auto',...]
         # Battery
         self.battery = 35   # % Capacity of battery remaining
         # Position, Course & Speed
@@ -46,7 +46,7 @@ class Store(object):
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
         self.Kp = 1
         self.Ki = 0 
-        self.Kd = 0.5 
+        self.Kd = 0.1 
         # PID variables to matintain course by steering
         self.error = 0
         self.errSum = 0
@@ -59,14 +59,16 @@ class Store(object):
         self.declinationalpha = 0.00 # % we trust in the gps to calculate the magnetic declination
 
         # Motor State - never set these directly
-        self.surge = 0 #  desired robot speed cm/s
-        self.steer = 0 #  desired robot angualr rotation deg/s
-        self.steergain = 1
-        self.vmin = 0  #  minimum robot velocity cm/s
-        self.vmax = 20 #  maximum robot velocity cm/s
-        self.mpl = 55  #  left pwm value where the motor starts to turn
-        self.mpr = 55  #  right pwm value where the motor starts to turn
-        self.maxpwm = 110 # maximum pwm signal sent to the motors
+        self.surge = 0 #  desired robot speed 
+        self.steer = 0 #  desired robot angular rotation deg/s TODO use radians/s
+        #self.steergain = 1
+        self.vmin = 0  #  minimum robot velocity , constrined to 0..1
+        self.vmax = 1  #  maximum robot velocity , constrined to 0..1
+        self.minPwmLeft = 3712  #  left pwm value where the motor starts to turn ,0.2ms pulse width (50Hz)
+        self.minPwmRight = 3712  #  right pwm value where the motor starts to turn, 0.2ms pulse width (50Hz)      
+        self.maxpwm = 6080 #95 # maximum pwm signal sent to the motors, 2.0ms pulse width (50Hz)
+
+
 
         # IMU 
         self.accelbias = (0,0,1)
@@ -288,8 +290,10 @@ class Store(object):
         return self._surge
 
     @surge.setter
-    def surge(self, value):
-        self._surge = int(value)
+    def surge(self, value):     
+        # constrain to 0..1
+        # TODO should this be a percentage of the maxpwm value ??? 
+        self._surge = max(min(float(value),1),0) # constrain to 0..1 
 
     @property
     def steer(self):
@@ -299,6 +303,7 @@ class Store(object):
     def steer(self, value):
         self._steer = float(value)
 
+    '''
     @property
     def steergain(self):
         return self._steergain
@@ -306,7 +311,7 @@ class Store(object):
     @steergain.setter
     def steergain(self, value):
         self._steergain = float(value)
-
+    '''
     @property
     def vmin(self):
         return self._vmin
@@ -325,19 +330,19 @@ class Store(object):
         self._vmax = int(value)
 
     @property
-    def mpl(self):
+    def minPwmLeft(self):
         return self._mpl
 
-    @mpl.setter
-    def mpl(self, value):
+    @minPwmLeft.setter
+    def minPwmLeft(self, value):
         self._mpl = int(value)
 
     @property
-    def mpr(self):
+    def minPwmRight(self):
         return self._mpr
 
-    @mpr.setter
-    def mpr(self, value):
+    @minPwmRight.setter
+    def minPwmRight(self, value):
         self._mpr = int(value)
 
     @property
@@ -347,7 +352,6 @@ class Store(object):
     @maxpwm.setter
     def maxpwm(self, value):
         self._maxpwm = int(value)
-
 
     def set_number(self, value):
         self.number = value
@@ -442,8 +446,8 @@ class Store(object):
     def set_steer(self, value):
         self.steer = value
 
-    def set_steergain(self, value):
-        self.steergain = value
+    #def set_steergain(self, value):
+    #    self.steergain = value
         
     def set_vmin(self, value):
         self.vmin = value
@@ -452,10 +456,10 @@ class Store(object):
         self.vmax = value
 
     def set_mpl(self, value):
-        self.mpl = value
+        self.minPwmLeft = value
 
     def set_mpr(self, value):
-        self.mpr = value
+        self.minPwmRight = value
 
     def set_maxpwm(self, value):
         self.maxpwm = value

@@ -39,11 +39,11 @@ def statemessage():
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
         "steer":store.steer,
-        "steergain":store.steergain,
+        #"steergain":store.steergain,
         "vmin":store.vmin,
         "vmax":store.vmax,
-        "mpl":store.mpl,
-        "mpr":store.mpr,
+        "minPwmLeft":store.minPwmLeft,
+        "minPwmRight":store.minPwmRight,
         "maxpwm":store.maxpwm,
     }
 
@@ -110,7 +110,7 @@ def statemessage_chunk6():
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
         "steer":store.steer,
-        "steergain":store.steergain,
+        #"steergain":store.steergain,
     }
 
 def statemessage_chunk7():
@@ -118,8 +118,8 @@ def statemessage_chunk7():
     return {
         "vmin":store.vmin,
         "vmax":store.vmax,
-        "mpl":store.mpl,
-        "mpr":store.mpr,
+        "minPwmLeft":store.minPwmLeft,
+        "minPwmRight":store.minPwmRight,
         "maxpwm":store.maxpwm,
     }
 
@@ -161,8 +161,8 @@ def motionmessage():
         #"steergain":store.steergain,
         #"vmin":store.vmin,
         #"vmax":store.vmax,
-        #"mpl":store.mpl,
-        #"mpr":store.mpr,
+        #"minPwmLeft":store.minPwmLeft,
+        #"minPwmRight":store.minPwmRight,
         #"maxpwm":store.maxpwm,
     }
 
@@ -211,8 +211,8 @@ def coursesettingsmessage():
         #"steergain":store.steergain,
         #"vmin":store.vmin,
         #"vmax":store.vmax,
-        #"mpl":store.mpl,
-        #"mpr":store.mpr,
+        #"minPwmLeft":store.minPwmLeft,
+        #"minPwmRight":store.minPwmRight,
         #"maxpwm":store.maxpwm,
     }
 
@@ -236,11 +236,11 @@ def pidsettingsmessage():
 def motorsettingsmessage():
     ''' state that changes when the robot steering setting change '''
     return {
-        "steergain":store.steergain,
+        #"steergain":store.steergain,
         "vmin":store.vmin,
         "vmax":store.vmax,
-        "mpl":store.mpl,
-        "mpr":store.mpr,
+        "minPwmLeft":store.minPwmLeft,
+        "minPwmRight":store.minPwmRight,
         "maxpwm":store.maxpwm,
     }
 

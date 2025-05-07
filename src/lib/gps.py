@@ -135,9 +135,6 @@ class GPS(object):
 
                 store.position = (latitude, longitude)
                 store.positionvalid = True
-
-                print('gps position', store.position)
-
                 # Notify one other task that a new position is available
                 self.positionAvailable.set()
                 
