@@ -79,6 +79,7 @@ class Store(object):
         self.accelbias = (0,0,1) # (x,y,z) bias of the accelerometer in g's
         self.gyrobias = (0,0,0) # (x,y,z) bias of the gyroscope in degrees/sec
         self.magbias =  (20.03906, -23.30859, 17.7207, 48.9375, 54.10547, 36.19727, 0.9484222, 0.8578321, 1.282235) 
+        self.tempoffset = 0
         self.tempsensitivity = 321 # temperature sensitivity of the IMU in degrees C/LSB
 
     def update(self,dictionary):

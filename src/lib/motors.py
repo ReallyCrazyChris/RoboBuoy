@@ -103,20 +103,13 @@ async def pidTask():
             # Choose the shortest direction rotation
             store.error = store.desiredcourse - store.currentcourse
             
-            '''
-            if abs(error) <= 180:
-               store.error = error
-               #print("_cw",store.error)
-            else:
-               store.error = error - 360
-               #print("ccw",store.error)
-            '''
+
             # update the integral error
             if store.Ki > 0 :
                 store.errSum = store.errSum + (store.error * deltaT)
-                # TODO antiwindup - limit the output of the integral term
+                # constrain the integral error to prevent windup
+                store.errSum = min(1.6, max(-1.6, store.errSum)) 
 
-   
             # update the differential error
             if store.Kd > 0:
                 store.dErr = (store.error - store.lastErr) / deltaT
