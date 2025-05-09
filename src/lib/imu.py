@@ -3,9 +3,10 @@ Micropython driver for the I2C MPU9250 9-DOF Sensor
 """
 import utime
 from struct import pack, unpack
-from math import atan2, degrees, sqrt, radians
+from math import atan2, radians
 from lib.i2c import i2c
 from lib.store import Store
+from lib.utils import normalize
 store = Store.instance() #singleton reference
 
 class MagDataNotReady(Exception):
@@ -130,11 +131,14 @@ class IMU(object):
         return x,y,z         
 
     def readCalibratedGyro(self):
-        ''' apply the calibrated accel bias to the raw accel values'''
+        """
+        return tuple of radians per second (x,y,z)
+        North-East-Down(NED) as a fixed, parent coordinate system
+        """
         x,y,z = self.readGyro()
         xo, yo, zo = tuple(store.gyrobias)
 
-        return x-xo, y-yo, z-zo, self.deltat()        
+        return radians(x-xo), radians(y-yo), radians(z-zo), self.deltat()        
 
     #Magnetometer
     def initMag( self ):
@@ -193,9 +197,9 @@ class IMU(object):
         return x,y,z
 
     def readMagHeading(self):
-        '''returns the magnetic heading in degrees:  -179 -> 180 degrees'''
+        '''returns the magnetic heading in radians -PI to PI'''
         x,y,_ = self.readMag( tuple(store.magbias) )
-        return int(degrees(atan2(x,y)))
+        return atan2(y,x)# Radians
 
     #Temperature Sensor
     def readTemp( self ):

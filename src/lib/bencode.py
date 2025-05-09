@@ -1,5 +1,10 @@
 from machine import Timer
 
+#BENCODE
+# Bencode is a simple encoding scheme used in the BitTorrent protocol.
+# It is used to encode data structures such as dictionaries, lists, and integers into a compact binary format.
+# It is suitable for use in low-level network protocols and is often used in peer-to-peer file sharing applications
+
 class BencodeFailure(Exception):
     pass
 

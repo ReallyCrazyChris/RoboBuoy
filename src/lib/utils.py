@@ -1,44 +1,25 @@
-from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2
+from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2, pi
 
-def constrain(course):
-    '''heading is constrained to -180 to 180 degree range'''
-    if (course > 180):
-        course -= 360
-    
-    if (course < -180):
-        course += 360
-    return course    
 
-def normalize(num, lower=0.0, upper=360.0, b=False):
-    """ Got this code from : https://gist.github.com/phn/1111712/35e8883de01916f64f7f97da9434622000ac0390"""
-   
-    res = num
-    if not b:
-        if lower >= upper:
-            raise ValueError("Invalid lower and upper limits: (%s, %s)" %
-                             (lower, upper))
 
-        res = num
-        if num > upper or num == lower:
-            num = lower + abs(num + upper) % (abs(lower) + abs(upper))
-        if num < lower or num == upper:
-            num = upper - abs(num - lower) % (abs(lower) + abs(upper))
+def translateValueRange(input,minIn,maxIn,minOut,maxOut):
+    ''' Translate input value from one range to another '''
+    # input is between minIn and maxIn
+    # output is between minOut and maxOut
+    # e.g. translateValueRange(0,0,100,0,255) => 0
 
-        res = lower if res == upper else num
-    else:
-        total_length = abs(lower) + abs(upper)
-        if num < -total_length:
-            num += ceil(num / (-2 * total_length)) * 2 * total_length
-        if num > total_length:
-            num -= floor(num / (2 * total_length)) * 2 * total_length
-        if num > upper:
-            num = total_length - num
-        if num < lower:
-            num = -total_length - num
+    speed = min(maxIn, max(minIn, input))
+    out =(speed-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut
+    return int(out)
 
-        res = num * 1.0  # Make all numbers float, to be consistent
 
-    return res        
+
+
+def normalize(angle):
+    '''Normalize degrees to -PI to PI radians range'''
+    return (angle + pi) % (2 * pi) - pi
+
+
 
 def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
     '''
@@ -107,11 +88,13 @@ def distancebearing(position_str,destination_str):
     latAvg = (latA+latB)/2
     dx = dx*cos(radians(latAvg))   
 
+    # The distances are relatively small and the curvature of the earth is not taken into account
+    # The distance is calculated in arcdegrees, which is then converted to meters
+    # ISSUE : distance may be inaccurate for the higher lattitudes, where the curvature of the earth is more pronounced
     arcdegrees = sqrt(dx**2 + dy**2)    # good old pythagoras
-    meters = arcdegrees * 0.011112      # 111120 / 10000000 # 111120 meters in an arcdegree
-    meters = round(meters,1)
+    distance = arcdegrees * 0.011112      # 111120 / 10000000 # 111120 meters in an arcdegree
+    distance = round(distance,1)    # distance in meters
 
-    bearing = degrees(atan2(dx,dy))
-    bearing = round(bearing,1) 
-
-    return meters, bearing
+    bearing = round(atan2(dx,dy),3) # bearing in radians
+   
+    return distance, bearing

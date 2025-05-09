@@ -2,6 +2,7 @@
 # Messages that update RoboBuoyAPP State
 #####################################################
 
+from math import degrees
 from lib.store import Store
 store = Store.instance()
 
@@ -16,14 +17,14 @@ def statemessage():
         "battery":store.battery,
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":store.gpscourse,
+        "gpscourse":int(degrees(store.gpscourse)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":store.magcourse,
-        "magdeclination":store.magdeclination,
-        "currentcourse":int(store.currentcourse),
+        "magcourse":int(degrees(store.magcourse)),
+        "magdeclination":int(degrees(store.magdeclination)),
+        "currentcourse":int(degrees(store.currentcourse)),
         "destination":store.destination,
         "distance":store.distance,
-        "desiredcourse":store.desiredcourse,
+        "desiredcourse":int(degrees(store.desiredcourse)),
         "waypoints":store.waypoints,
         "waypointarrivedradius":store.waypointarrivedradius,
         "holdgain":store.holdgain,
@@ -38,7 +39,7 @@ def statemessage():
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
-        "steer":store.steer,
+        "steer":int(degrees(store.steer)),
         #"steergain":store.steergain,
         "vmin":store.vmin,
         "vmax":store.vmax,
@@ -67,19 +68,19 @@ def statemessage_chunk2():
     return {
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":store.gpscourse,
+        "gpscourse":int(degrees(store.gpscourse)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":store.magcourse,
-        "magdeclination":store.magdeclination,
+        "magcourse":int(degrees(store.magcourse)),
+        "magdeclination":int(degrees(store.magdeclination)),
     }
 
 def statemessage_chunk3():
     ''' state that changes when the robot is initalized '''
     return {
-        "currentcourse":int(store.currentcourse),
+        "currentcourse":int(degrees(store.currentcourse)),
         "destination":store.destination,
         "distance":store.distance,
-        "desiredcourse":store.desiredcourse,
+        "desiredcourse":int(degrees(store.desiredcourse)),
     }
 
 def statemessage_chunk4():
@@ -109,7 +110,7 @@ def statemessage_chunk6():
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
         "surge":store.surge,
-        "steer":store.steer,
+        "steer":int(degrees(store.steer)),
         #"steergain":store.steergain,
     }
 
@@ -135,14 +136,14 @@ def motionmessage():
         #"battery":store.battery,
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":store.gpscourse,
+        "gpscourse":int(degrees(store.gpscourse)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":store.magcourse,
-        "magdeclination":store.magdeclination,
-        "currentcourse":int(store.currentcourse),
+        "magcourse":int(degrees(store.magcourse)),
+        "magdeclination":int(degrees(store.magdeclination)),
+        "currentcourse":int(degrees(store.currentcourse)),
         #"destination":store.destination,
         #"distance":store.distance,
-        "desiredcourse":store.desiredcourse,
+        "desiredcourse":int(degrees(store.desiredcourse)),
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
         #"holdgain":store.holdgain,
@@ -157,7 +158,7 @@ def motionmessage():
         #"magalpha":store.magalpha,
         #"declinationalpha":store.declinationalpha,
         "surge":store.surge,
-        #"steer":store.steer,
+        #"steer":int(degrees(store.steer)),
         #"steergain":store.steergain,
         #"vmin":store.vmin,
         #"vmax":store.vmax,
@@ -185,14 +186,14 @@ def coursesettingsmessage():
         #"battery":store.battery,
         #"positionvalid":store.positionvalid,
         #"position":store.position,
-        "gpscourse":store.gpscourse,
+        "gpscourse":int(degrees(store.gpscourse)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":store.magcourse,
-        "magdeclination":store.magdeclination,
-        "currentcourse":int(store.currentcourse),
+        "magcourse":int(degrees(store.magcourse)),
+        "magdeclination":int(degrees(store.magdeclination)),
+        "currentcourse":int(degrees(store.currentcourse)),
         #"destination":store.destination,
         #"distance":store.distance,
-        "desiredcourse":store.desiredcourse,
+        "desiredcourse":int(degrees(store.desiredcourse)),
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
         #"holdgain":store.holdgain,

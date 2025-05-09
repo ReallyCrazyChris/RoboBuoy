@@ -1,6 +1,6 @@
 import uasyncio as asyncio
 from lib.store import Store
-from lib.utils import normalize, constrain
+from lib.utils import normalize
 from lib.imu import IMU, MagDataNotReady
 from lib.gps import GPS
 
@@ -21,11 +21,10 @@ async def fuseGyroTask():
 
             # Integrate the gyro, update the current course
             _,_,gyro_z,deltaT = imu.readCalibratedGyro()
+            store.currentcourse = normalize( store.currentcourse + gyro_z * deltaT )
 
-            gyroAdjustedCourse = ( store.currentcourse + gyro_z * deltaT )
-
-            store.currentcourse = normalize(gyroAdjustedCourse,-180,180) # clamp to -180 ... 180 degrees TODO use a mutator ?
-            
+            #print a table of the current course, gyro course and deltaT
+            #print("currentcourse: %5.2f gyro_z: %5.2f deltaT: %5.2f" % (store.currentcourse, gyro_z, deltaT))
 
 
             await asyncio.sleep_ms(20)  
@@ -42,13 +41,11 @@ async def fuseCompassTask():
         while True:
             try:
                 await asyncio.sleep_ms(100)
-                store.magcourse = imu.readMagHeading() + store.magdeclination  
+                store.magcourse = imu.readMagHeading() + store.magdeclination
                 
                 if store.magalpha > 0:
-                    # read magnetic compass heading
-                    compassAdjustedCourse = (1.0 - store.magalpha) * store.currentcourse + store.magalpha * (store.magcourse )
-                    #print('compassAdjustedCourse',compassAdjustedCourse)
-                    store.currentcourse = normalize(compassAdjustedCourse,-180,180) # clamp to -180 ... 180 degrees
+                    # Apply a complementary filter to fuse the compass course with the current course
+                    store.currentcourse = (1.0 - store.magalpha) * store.currentcourse +  store.magcourse * store.magalpha 
 
             except MagDataNotReady:
                 # TODO, magnetometer is a resource that needs to be managed by a lock
@@ -67,18 +64,17 @@ async def fuseGpsTask():
             
             await gps.courseAvailable.wait()
        
-            # update the currentcourse based on the latest gps cource
-            if store.gpsalpha > 0 and store.gpsspeed >= 1:# must be moving for the gpscourse to be valid           
-                # Complementary filter strongly weighted towards the gps
-                gpsAdjustedCourse = (1.0 - store.gpsalpha) * store.currentcourse + store.gpsalpha * store.gpscourse
-                store.currentcourse = normalize(gpsAdjustedCourse,-180,180) # clamp to -180 ... 180 degrees
+            # Fuse the GPS course with the current course using a complementary filter
+            # This is only done if the GPS course is valid and the GPS speed is greater than 1 m/s
+            if store.gpsalpha > 0 and store.gpsspeed >= 1:         
+                store.currentcourse =  (1.0 - store.gpsalpha) * store.currentcourse + store.gpscourse * store.gpsalpha 
 
 
-            # update the compass declination based on the latest gps course
-            if store.declinationalpha > 0 and store.distance > 10:  #and store.gpsspeed >= 1
-                # Complementary filter strongly weighted towards the magdeclination
-                declination =  (1.0 - store.declinationalpha) * store.magdeclination + ( store.declinationalpha * (store.gpscourse - store.magcourse)  )
-                store.magdeclination = normalize(declination,-180,180)
+            # Fuse the Magnetic Declination with the GPS Declination using a complementary filter
+            # This is only done if the Robot is moving (distance to go to waypoint > 10 m)
+            if store.declinationalpha > 0 and store.distance > 10:  #and store.gpsspeed >= 1 
+                store.magdeclination =  (1.0 - store.declinationalpha) * store.magdeclination + ( store.declinationalpha * (store.gpscourse - store.magcourse)  )
+   
 
     except asyncio.CancelledError:
         print( "stopping fuseGpsTask" )       

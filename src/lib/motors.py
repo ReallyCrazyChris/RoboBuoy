@@ -2,6 +2,7 @@ import uasyncio as asyncio
 from machine import PWM, Pin
 from math import radians
 from lib.store import Store
+
 store = Store.instance()
 
 # PWM control of ESC motor controlers 
@@ -12,7 +13,6 @@ async def armMotorsCoroutine():
     armMotors()
     await asyncio.sleep_ms(1000) # wait for the motors to be armed
     # set the duty cycle to the minimum value
-
 
 def armMotors():
     ''' arm the motors '''
@@ -64,7 +64,7 @@ def driveMotors(vl=0,vr=0):
     _vl = min(store.vmax, max(store.vmin, vl)) 
     _vr = min(store.vmax, max(store.vmin, vr)) 
 
-    # Translate the speed to a PWM value
+    # Translate the speed [0..1] to a PWM value 
     pwmLeft = translateSpeedPWM(_vl,store.vmin,store.vmax,store.minPwmLeft,store.maxpwm)
     pwmRight = translateSpeedPWM(_vr,store.vmin,store.vmax,store.minPwmRight,store.maxpwm)
 
@@ -85,7 +85,7 @@ async def pidTask():
     the desired course, considering the current course
     '''
     import utime
-    from lib.utils import constrain
+    from lib.utils import normalize
     # clear the error accumulators
     store.errSum = 0
     store.dErr = 0
@@ -101,15 +101,16 @@ async def pidTask():
             startTime = currentTime
 
             # Choose the shortest direction rotation
-            error = store.desiredcourse - store.currentcourse
+            store.error = store.desiredcourse - store.currentcourse
             
+            '''
             if abs(error) <= 180:
                store.error = error
                #print("_cw",store.error)
             else:
                store.error = error - 360
                #print("ccw",store.error)
-
+            '''
             # update the integral error
             if store.Ki > 0 :
                 store.errSum = store.errSum + (store.error * deltaT)
@@ -120,13 +121,14 @@ async def pidTask():
             if store.Kd > 0:
                 store.dErr = (store.error - store.lastErr) / deltaT
 
-            # summate the PID 
-            # contrain the output to the range of the steering -180 .. 180
-            # drive the output steering value    
-            store.steer = constrain((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
+            # calculate the PID output
+            # steer is between -PI and PI radians
+            # steer = Kp * error + Ki * errSum + Kd * dErr
+
+            store.steer = normalize((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
             
             #print table of the PID values, with fixed table widths
-            print("Kp: %5.2f Ki: %5.2f Kd: %5.2f err: %5.2f errSum: %5.2f dErr: %5.2f steer: %5.2f" % (store.Kp, store.Ki, store.Kd, store.error, store.errSum, store.dErr, store.steer))
+            #print("error: %5.2f Kp: %5.2f Ki: %5.2f Kd: %5.2f err: %5.2f errSum: %5.2f dErr: %5.2f steer: %5.2f" % (store.error, store.Kp, store.Ki, store.Kd, store.error, store.errSum, store.dErr, store.steer))
 
     
             # keep current error for the next PID cycle
@@ -145,8 +147,8 @@ async def driveTask():
             #vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
             #vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
 
-            vl = (2*store.surge + radians(store.steer)) / 2
-            vr = (2*store.surge - radians(store.steer)) / 2
+            vl = (2*store.surge + store.steer) / 2
+            vr = (2*store.surge - store.steer) / 2
 
             driveMotors(vl,vr)
             await asyncio.sleep_ms(20) # TODO Try without this delay 

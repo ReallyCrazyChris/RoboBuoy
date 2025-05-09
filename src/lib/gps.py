@@ -1,6 +1,6 @@
 import time
 import uasyncio as asyncio
-
+from math import radians
 from lib.utils import convert_dm_dd, normalize
 from lib.gpsuart import gpsuart
 from lib.store import Store
@@ -160,7 +160,7 @@ class GPS(object):
             return False
 
         store.gpsspeed = spd_knt
-        store.gpscourse = normalize(course,-180,180)
+        store.gpscourse = normalize(radians(course))
 
         self.courseAvailable.set() # notifies course.fuseGPS 
         self.speedAvailable.set()
