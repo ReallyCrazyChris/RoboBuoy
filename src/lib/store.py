@@ -52,7 +52,7 @@ class Store(object):
         # PID tuning gains to control the steering based on desiredcourse vs currentcourse
         self.Kp = 1.0   # proportional gain
         self.Ki = 0     # integral gain
-        self.Kd = 0.1   # derivative gain
+        self.Kd = 0   # derivative gain
 
         # PID variables to matintain course by steering
         self.error = 0      # error between desired course and current course

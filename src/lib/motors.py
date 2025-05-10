@@ -1,6 +1,6 @@
 import uasyncio as asyncio
 from machine import PWM, Pin
-from math import radians
+from math import radians, pi
 from lib.store import Store
 
 store = Store.instance()
@@ -45,28 +45,24 @@ def disarmMotors():
         motorLeft = None
         motorRight = None        
 
-def translateSpeedPWM(speed,minSpeed,maxSpeed,minPWM,maxPWM):
-    ''' Translate speed to PWM value '''
-    # motor speed is between 0 and 1
-    # pwm is between minPWM and maxPWM
-    speed = min(maxSpeed, max(minSpeed, speed)) # clamp to min and max speed
-
-    # map speed to pwm
-    pwm =(speed-minSpeed)/(maxSpeed-minSpeed)*(maxPWM-minPWM)+minPWM
-    return int(pwm)
+def translateValue(valueIn,minIn,maxIn,minOut,maxOut):
+    ''' Translate value from one range to another '''
+    _valueIn = min(maxIn, max(minIn, valueIn)) # clamp the input value
+    _valueOut =(_valueIn-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut # translate the value
+    return int(_valueOut)
 
 
 
 
 def driveMotors(vl=0,vr=0):
     ''' drive the motors with the given speed '''
-    # clamp max and min motor speeds  
-    _vl = min(store.vmax, max(store.vmin, vl)) 
-    _vr = min(store.vmax, max(store.vmin, vr)) 
+    # clamp max and min motor speeds 0..1 
+    vleft = min(1, max(0, vl)) 
+    vright = min(1, max(0, vr)) 
 
     # Translate the speed [0..1] to a PWM value 
-    pwmLeft = translateSpeedPWM(_vl,store.vmin,store.vmax,store.minPwmLeft,store.maxpwm)
-    pwmRight = translateSpeedPWM(_vr,store.vmin,store.vmax,store.minPwmRight,store.maxpwm)
+    pwmLeft = translateValue(vleft,0,1,store.minPwmLeft,store.maxpwm)
+    pwmRight = translateValue(vright,0,1,store.minPwmRight,store.maxpwm)
 
     # Drive the motors
     motorLeft.duty_u16(pwmLeft)
@@ -93,6 +89,11 @@ async def pidTask():
 
     try: 
         print('starting pidTask')
+
+        p = 0
+        i = 0
+        d = 0
+
         while True:
 
             await asyncio.sleep_ms(10)
@@ -100,50 +101,56 @@ async def pidTask():
             deltaT =  utime.ticks_diff(currentTime,startTime )/1000000
             startTime = currentTime
 
-            # Choose the shortest direction rotation
-            store.error = store.desiredcourse - store.currentcourse
-            
+            # update the proportional error
+            store.error = store.desiredcourse - store.currentcourse # radians
+            p = store.Kp * store.error
 
             # update the integral error
-            if store.Ki > 0 :
-                store.errSum = store.errSum + (store.error * deltaT)
-                # constrain the integral error to prevent windup
-                store.errSum = min(1.6, max(-1.6, store.errSum)) 
-
+            if store.Ki > 0:
+                store.errSum = store.errSum + (store.error * deltaT) # s/radians
+            i = store.Ki * store.errSum
+            
             # update the differential error
             if store.Kd > 0:
-                store.dErr = (store.error - store.lastErr) / deltaT
+                store.dErr = (store.error - store.lastErr) / deltaT #radians/s
+                store.lastErr = store.error
+            
+            d = store.Kd * store.dErr
 
-            # calculate the PID output
-            # steer is between -PI and PI radians
-            # steer = Kp * error + Ki * errSum + Kd * dErr
-
-            store.steer = normalize((store.Kp * store.error) + (store.Ki * store.errSum) + (store.Kd * store.dErr))
+            # steer is between -pi and pi radians
+            store.steer = normalize(p + i + d) # radians
             
             #print table of the PID values, with fixed table widths
-            #print("error: %5.2f Kp: %5.2f Ki: %5.2f Kd: %5.2f err: %5.2f errSum: %5.2f dErr: %5.2f steer: %5.2f" % (store.error, store.Kp, store.Ki, store.Kd, store.error, store.errSum, store.dErr, store.steer))
+            #print("p: %5.2f i: %5.2f d: %5.2f steer: %5.2f" % (p, i, d, store.steer))
 
+            #print t able of differential values
+            #print("P: %5.2f dErr: %5.2f lastErr: %5.2f d %5.2f" % (p,store.dErr, store.lastErr, d)) 
+   
     
-            # keep current error for the next PID cycle
-            store.lastErr = store.error
+          
+            
   
     except asyncio.CancelledError:
         print( "stopping pidTask" )
 
 
 async def driveTask():
-    ''' drive motors (steer in degrees -180..180 , surge in cm/s) '''
+    '''' drive the motors with the given speed '''
     try:
         print('starting driveMotorsTask')
         while 1:
 
-            #vl = (2*store.surge + radians(store.steer)*store.steergain) / 2
-            #vr = (2*store.surge - radians(store.steer)*store.steergain) / 2
+            # surge is between 0 and 1
+            # steer is between -pi and pi radians
+            # steer is translated to a value between 0 and 1
+            # vl is between 0 and 1
+            # vr is between 0 and 1
 
-            vl = (2*store.surge + store.steer) / 2
-            vr = (2*store.surge - store.steer) / 2
-
+            vl = (store.surge + translateValue(store.steer,-pi,pi,0,1)) / 2
+            vr = (store.surge - translateValue(store.steer,-pi,pi,0,1)) / 2
+            
             driveMotors(vl,vr)
+
             await asyncio.sleep_ms(20) # TODO Try without this delay 
 
     except asyncio.CancelledError:  

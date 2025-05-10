@@ -1,7 +1,5 @@
 from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2, pi
 
-
-
 def translateValueRange(input,minIn,maxIn,minOut,maxOut):
     ''' Translate input value from one range to another '''
     # input is between minIn and maxIn
@@ -12,14 +10,9 @@ def translateValueRange(input,minIn,maxIn,minOut,maxOut):
     out =(speed-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut
     return int(out)
 
-
-
-
 def normalize(angle):
     '''Normalize degrees to -PI to PI radians range'''
     return (angle + pi) % (2 * pi) - pi
-
-
 
 def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
     '''
@@ -34,8 +27,8 @@ def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
 
     Micropyhton has poor floating point precision
     this means that distance and bearing calculations are too inaccurate.
-    The solution here providesds float values, but also integervalues specific for the 
-    distance and bearing calculaiton.
+    The solution here provides float values, but also integer values specific for the 
+    distance and bearing calculation.
     ''' 
     degree = int(degree)
     minuite, minuite_decimal = minutes.split('.')
@@ -90,11 +83,10 @@ def distancebearing(position_str,destination_str):
 
     # The distances are relatively small and the curvature of the earth is not taken into account
     # The distance is calculated in arcdegrees, which is then converted to meters
-    # ISSUE : distance may be inaccurate for the higher lattitudes, where the curvature of the earth is more pronounced
     arcdegrees = sqrt(dx**2 + dy**2)    # good old pythagoras
     distance = arcdegrees * 0.011112      # 111120 / 10000000 # 111120 meters in an arcdegree
-    distance = round(distance,1)    # distance in meters
 
-    bearing = round(atan2(dx,dy),3) # bearing in radians
+    distance = round(distance,1)    # distance in meters, limted to 1 decimal
+    bearing = round(atan2(dx,dy),3) # bearing in radians, limited to 3 decimals
    
     return distance, bearing
