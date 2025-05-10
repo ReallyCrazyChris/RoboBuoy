@@ -2,6 +2,7 @@ import uasyncio as asyncio
 from machine import PWM, Pin
 from math import radians, pi
 from lib.store import Store
+from lib.utils import translateValue
 
 store = Store.instance()
 
@@ -45,14 +46,6 @@ def disarmMotors():
         motorLeft = None
         motorRight = None        
 
-def translateValue(valueIn,minIn,maxIn,minOut,maxOut):
-    ''' Translate value from one range to another '''
-    _valueIn = min(maxIn, max(minIn, valueIn)) # clamp the input value
-    _valueOut =(_valueIn-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut # translate the value
-    return int(_valueOut)
-
-
-
 
 def driveMotors(vl=0,vr=0):
     ''' drive the motors with the given speed '''
@@ -61,8 +54,8 @@ def driveMotors(vl=0,vr=0):
     vright = min(1, max(0, vr)) 
 
     # Translate the speed [0..1] to a PWM value 
-    pwmLeft = translateValue(vleft,0,1,store.minPwmLeft,store.maxpwm)
-    pwmRight = translateValue(vright,0,1,store.minPwmRight,store.maxpwm)
+    pwmLeft = int( translateValue(vleft,0,1,store.minPwmLeft,store.maxpwm))
+    pwmRight = int( translateValue(vright,0,1,store.minPwmRight,store.maxpwm))
 
     # Drive the motors
     motorLeft.duty_u16(pwmLeft)
@@ -146,8 +139,8 @@ async def driveTask():
             # vl is between 0 and 1
             # vr is between 0 and 1
 
-            vl = (store.surge + translateValue(store.steer,-pi,pi,0,1)) / 2
-            vr = (store.surge - translateValue(store.steer,-pi,pi,0,1)) / 2
+            vl = (store.surge + translateValue(store.steer,-pi,pi,-1,1)) / 2
+            vr = (store.surge - translateValue(store.steer,-pi,pi,-1,1)) / 2
             
             driveMotors(vl,vr)
 

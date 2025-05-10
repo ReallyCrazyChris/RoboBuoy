@@ -1,14 +1,10 @@
 from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2, pi
 
-def translateValueRange(input,minIn,maxIn,minOut,maxOut):
-    ''' Translate input value from one range to another '''
-    # input is between minIn and maxIn
-    # output is between minOut and maxOut
-    # e.g. translateValueRange(0,0,100,0,255) => 0
-
-    speed = min(maxIn, max(minIn, input))
-    out =(speed-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut
-    return int(out)
+def translateValue(valueIn,minIn,maxIn,minOut,maxOut):
+    ''' Translate value from one range to another '''
+    _valueIn = min(maxIn, max(minIn, valueIn)) # clamp the input value
+    _valueOut =(_valueIn-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut # translate the value
+    return _valueOut
 
 def normalize(angle):
     '''Normalize degrees to -PI to PI radians range'''
