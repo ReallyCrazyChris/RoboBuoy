@@ -21,7 +21,7 @@ gps = GPS()
 
 async def mainTaskLoop():
 
-    #loadsettings() # load settings from the filesystem
+    loadsettings() # load settings from the filesystem
 
     await calibrateGyroTask() # calibrate the gyro
     await armMotorsCoroutine() # arm the motors

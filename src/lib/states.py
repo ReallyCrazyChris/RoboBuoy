@@ -120,16 +120,16 @@ class CalibrateMag(State):
     async def start(self):
         from lib.storepersistance import savesettings
         from lib.imutasks import calibrateMagTask
-        from motors import driveMotors
+        from lib.motors import driveMotors
         store.mode=self.name
-        driveMotors(60,0)      
+        
+        driveMotors(0,0) # stop the motors
+        await asyncio.sleep(1)
+        driveMotors(0.1,0) # start the motors     
         await calibrateMagTask()
-        savesettings()     
+        savesettings()    
+        driveMotors(0,0) 
         self.transitionTo('stop')
-
-    def end(self):
-        from motors import stopMotors
-        stopMotors()
 
     def validateTransition(self,statename):
         if (statename in ['stop']): return statename
