@@ -1,0 +1,25 @@
+import uasyncio as asyncio
+from driver.imu import IMU, MagDataNotReady
+from storage.store import Store
+imu = IMU()
+store = Store.instance()
+
+async def fuseCompassTask():
+    '''fuses the compass course with the currentcourse using a complement filter, strongly weighted towards the current course'''
+    try:
+        print('starting fuseCompassTask')
+        while True:
+            try:
+                await asyncio.sleep_ms(100)
+                store.magcourse = imu.readMagHeading() + store.magdeclination
+                
+                if store.magalpha > 0:
+                    # Apply a complementary filter to fuse the compass course with the current course
+                    store.currentcourse = (1.0 - store.magalpha) * store.currentcourse +  store.magcourse * store.magalpha 
+
+            except MagDataNotReady:
+                # TODO, magnetometer is a resource that needs to be managed by a lock
+                pass    
+           
+    except asyncio.CancelledError:
+        print( "stopping fuseCompassTask" )
