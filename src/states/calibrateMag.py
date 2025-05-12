@@ -19,11 +19,14 @@ class CalibrateMag(State):
         store.mode=self.name
 
         # rotate the buoy slowly to calibrate the magnetometer
-        self.slowRightRotate = asyncio.create_task(slowRightRotateTask(0.1, 0))
+        self.slowRightRotate = asyncio.create_task(slowRightRotateTask())
+
+        # as the RoboBouy rotates in the water, calibrate the compass
         await calibrateMagTask()
+
         # save the calibration settings
-        savesettings()    
-        
+        savesettings()
+            
         self.transitionTo('stop')
 
     def end(self):

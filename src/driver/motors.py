@@ -57,12 +57,12 @@ def driveMotors(vl=0,vr=0):
 
 def stopMotors():
     ''' stop the motors by applying the minimum pwm duty cycle '''
-    #store.minPwmLeft = store.minPwmLeft if store.minPwmLeft > 0 else 3712
-    #store.minPwmRight = store.minPwmRight if store.minPwmRight > 0 else 3712
-    #motorLeft.duty_u16(store.minPwmLeft) 
-    #motorRight.duty_u16(store.minPwmRight)  
-    motorLeft.duty_u16(0)
-    motorRight.duty_u16(0)    
+    store.minPwmLeft = store.minPwmLeft if store.minPwmLeft > 0 else 3712
+    store.minPwmRight = store.minPwmRight if store.minPwmRight > 0 else 3712
+    motorLeft.duty_u16(store.minPwmLeft) 
+    motorRight.duty_u16(store.minPwmRight)  
+    #motorLeft.duty_u16(0)
+    #motorRight.duty_u16(0)    
 
 
 

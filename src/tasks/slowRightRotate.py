@@ -8,7 +8,7 @@ async def slowRightRotateTask():
         while 1:
             
             driveMotors(0.1,0) # slow right rotate
-            await asyncio.sleep_ms(20) # TODO Try without this delay 
+            await asyncio.sleep_ms(100) #
 
     except asyncio.CancelledError:  
             stopMotors()

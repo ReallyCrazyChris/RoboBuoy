@@ -4,7 +4,7 @@ call ./env.bat
 echo removing old files
 ampy rmdir /states
  
-echo uploading state
+echo uploading states
 ampy put ./src/states /states
 
 echo starting serial console
