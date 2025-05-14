@@ -1,9 +1,7 @@
 import uasyncio as asyncio
 from lib.statemachine import State 
 from storage.store import Store
-from storage.storepersistance import savesettings
-from tasks.calibrateMag import calibrateMagTask
-from tasks.slowRightRotate import slowRightRotateTask
+
 
 store = Store.instance()
 
@@ -16,6 +14,11 @@ class CalibrateMag(State):
         self.slowRightRotate = None
    
     async def start(self):
+
+        from storage.storepersistance import savesettings
+        from tasks.calibrateMag import calibrateMagTask
+        from tasks.slowRightRotate import slowRightRotateTask
+
         store.mode=self.name
 
         # rotate the buoy slowly to calibrate the magnetometer

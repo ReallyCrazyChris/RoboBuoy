@@ -2,8 +2,7 @@ import uasyncio as asyncio
 from lib.statemachine import State 
 from storage.store import Store
 
-from storage.storepersistance import savesettings
-from tasks.calibrateGyro import calibrateGyroTask
+
 
 store = Store.instance()
 
@@ -15,6 +14,8 @@ class CalibrateGyro(State):
         self.sm = sm
 
     async def start(self):
+        from storage.storepersistance import savesettings
+        from tasks.calibrateGyro import calibrateGyroTask
         store.mode=self.name
         await calibrateGyroTask()
         savesettings()     

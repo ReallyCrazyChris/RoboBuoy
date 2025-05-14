@@ -2,12 +2,12 @@ from math import floor, ceil, radians, sin, cos, sqrt, degrees, atan2, pi
 
 def translateValue(valueIn,minIn,maxIn,minOut,maxOut):
     ''' Translate value from one range to another '''
-    _valueIn = min(maxIn, max(minIn, valueIn)) # clamp the input value
-    _valueOut =(_valueIn-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut # translate the value
-    return _valueOut
+    valueIn = min(maxIn, max(minIn, valueIn)) # clamp the input value
+    valueOut =(valueIn-minIn)/(maxIn-minIn)*(maxOut-minOut)+minOut # translate the value
+    return valueOut
 
 def normalize(angle):
-    '''Normalize degrees to -PI to PI radians range'''
+    '''Normalize radians to -PI to PI radians range'''
     return (angle + pi) % (2 * pi) - pi
 
 def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
@@ -41,8 +41,18 @@ def convert_dm_dd(degree :str,minutes :str, hemi :str) -> str:
 
 def convert_dd_int(degreedecimal:str) -> int:
     '''
-    converts degree decimal to big int
-    "49.6939697" => 496939697
+    Converts degree decimal to integer
+ 
+    Micropython has limited floading precision of 10 Digits.
+    Some functions like math.cos, have results that are too imprecise for navigation
+    The poor mans fix is to do these calculation with integers
+
+    Args:
+        degreedecimal: "49.6939697" 
+
+    Returns:
+        integer 496939697 suitable for precise calculations
+       
     '''
     degree, decimal = degreedecimal.split('.')
     dd = str(degree)+str(decimal) 
@@ -50,39 +60,47 @@ def convert_dd_int(degreedecimal:str) -> int:
     dd = dd[:9]
     return int(dd)
 
-def distancebearing(position_str,destination_str):
-    '''
-    Provides distance (meters:float) and bearing (degrees:float) from a position to a destination 
-    This calculation is suitable for distances 10km or less and it is customized to mitigate the 
-    poor floating point precision of Micropython
-    For larger distances the Haversine formula would be needed
+    
+def positionDifference(position_str:str,destination_str:str) -> tuple:
+    ''' 
+        Provides the longitudal and latitudal differnce in meters
+        This calculation is suitable for distances 10km or less and
+        it is customized to mitigate the poor floating point precision of Micropython.
+        For larger distances the Haversine formula would be needed
     '''
 
-    #print('position_str',position_str)
     lat_p = convert_dd_int(position_str[0])
     lon_p = convert_dd_int(position_str[1])
-    #print('lat_p,lon_p',lat_p,lon_p)
 
-    #print('destination_str',destination_str)
     lat_d = convert_dd_int(destination_str[0])
     lon_d = convert_dd_int(destination_str[1])
-    #print('lat_d,lon_d',lat_d,lon_d)
 
-    dy = lat_d-lat_p # delta latitude
-    dx = lon_d-lon_p # delta longitude
+    # delta longitude, latitude, in arcdegrees
+    dx_arc = lon_d-lon_p 
+    dy_arc = lat_d-lat_p 
 
-    # correct dx due to the curvature of the earth
+
+    # correct dx_arc due to the curvature of the earth
     latA = float(destination_str[0])
     latB = float(position_str[0])
     latAvg = (latA+latB)/2
-    dx = dx*cos(radians(latAvg))   
+    correct_dx_arc = dx_arc*cos(radians(latAvg))   
 
-    # The distances are relatively small and the curvature of the earth is not taken into account
-    # The distance is calculated in arcdegrees, which is then converted to meters
-    arcdegrees = sqrt(dx**2 + dy**2)    # good old pythagoras
-    distance = arcdegrees * 0.011112      # 111120 / 10000000 # 111120 meters in an arcdegree
+    # The distances dx and dy are arcdegrees, which is then converted to meters
+    dx_meters = correct_dx_arc * 0.011112       # 111120 / 10000000 # 111120 meters in an arcdegree
+    dy_meters = dy_arc * 0.011112           	# 111120 / 10000000 # 111120 meters in an arcdegree
 
-    distance = round(distance,1)    # distance in meters, limted to 1 decimal
-    bearing = round(atan2(dx,dy),3) # bearing in radians, limited to 3 decimals
-   
-    return distance, bearing
+    return dx_meters, dy_meters
+
+ 
+def distanceBearing(position_str:str,destination_str:str) -> tuple:
+    '''
+    Provides distance (meters:float) and bearing (degrees:float) from a position to a destination 
+    '''
+
+    dx_meters, dy_meters = positionDifference(position_str,destination_str)
+    
+    distance_meters = round(sqrt(dx_meters**2 + dy_meters**2),1)   # distance in meters, limted to 1 decimal
+    bearing_rad = round(atan2(dx_meters,dy_meters),3) # bearing in radians, limited to 3 decimals
+
+    return distance_meters, bearing_rad ,dx_meters, dy_meters

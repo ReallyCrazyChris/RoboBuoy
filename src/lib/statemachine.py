@@ -26,11 +26,13 @@ class StateMachine(object):
     def setState(self, new_state_name):
         """Changes states and performs appropriate exit and entry actions."""
         if self.activeState is not None:
+            #TODO wrap in a try..catch to gracefully go to a safe state
             self.activeState.end()
         self.activeState = self.states[new_state_name]
         print('set state',new_state_name)
         self.activeState.__start__()
 
+        
 
 class State(object):
     """An abstract state."""

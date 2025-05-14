@@ -1,15 +1,18 @@
 import uasyncio as asyncio
-from lib.utils import distancebearing
-from driver.gps import GPS 
+
 from storage.store import Store
 
 store = Store.instance()
-gps = GPS()
+
 
 async def holdTask():
     '''
     Holds the current station (position)
     '''
+    from lib.utils import distanceBearing
+    from driver.gps import GPS 
+    gps = GPS()
+
     try: 
         print('starting holdTask')
 
@@ -21,13 +24,25 @@ async def holdTask():
 
         while True:
             #  hold station
-            store.distance, store.desiredcourse = distancebearing(store.position,store.destination)
-            # TODO: this will need to be revisited
-            store.surge = min(store.vmax, store.holdgain * store.distance * store.distance)
 
-            print("auto-hold: distance: %5.2f desiredcourse: %5.2f surge: %5.2f " % (store.distance, store.desiredcourse, store.surge ))
 
-            # wait for th enext GPS position to be available
+            distance, desiredcourse, dx_meters, dy_meters = distanceBearing(store.position,store.destination)
+         
+            store.distance = distance
+          
+
+            # Reduce the surge as the RoboBouy approached the waypoint
+            store.surge = min(store.vmax, store.distance**2 / store.waypointarrivedradius**2 )
+
+            # Reduce the desired course gitter with a complementary filter
+
+            store.desiredcourse =  (1.0 - store.holdgain) * store.desiredcourse + desiredcourse * store.holdgain 
+
+
+
+            print(f"Hold: Distance: {store.distance:.2f}m, Applying thrust: surge={store.surge:.2f}, desiredcourse={store.desiredcourse:.2f}  dx={dx_meters:.2f}, dy={dy_meters:.2f} ")
+
+
             await gps.positionAvailable.wait() 
 
     except asyncio.CancelledError:

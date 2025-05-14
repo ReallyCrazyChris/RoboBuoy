@@ -1,14 +1,8 @@
 import uasyncio as asyncio
 from lib.statemachine import State 
 from storage.store import Store
-
-from storage.storepersistance import savesettings
-from tasks.calibrateAccel import calibrateAccelTask
-
-
 store = Store.instance()
 
-   
 class CalibrateAccel(State):
     ''' The Accelerometer is calibrating'''
 
@@ -17,6 +11,9 @@ class CalibrateAccel(State):
         self.sm = sm
 
     async def start(self):
+        from tasks.calibrateAccel import calibrateAccelTask
+        from storage.storepersistance import savesettings
+
         store.mode=self.name
         await calibrateAccelTask()
         savesettings()     

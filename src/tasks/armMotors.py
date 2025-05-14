@@ -11,7 +11,6 @@ async def armMotorsTask():
         print('starting armMotorsTask')
         armMotors()
         await asyncio.sleep_ms(100)
-        print('armMotorsTask done') 
 
     except asyncio.CancelledError:  
         disarmMotors()

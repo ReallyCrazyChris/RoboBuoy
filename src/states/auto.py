@@ -2,9 +2,7 @@ import uasyncio as asyncio
 from lib.statemachine import State 
 from storage.store import Store
 
-from tasks.drive import driveTask
-from tasks.steer import steerTask
-from tasks.auto import autoTask
+
 
 store = Store.instance()
 
@@ -18,6 +16,9 @@ class Auto(State):
         self.autoTask  = None
        
     def start(self):
+        from tasks.drive import driveTask
+        from tasks.steer import steerTask
+        from tasks.auto import autoTask
         store.mode=self.name
         self.driveTask = asyncio.create_task( driveTask() )
         self.steerTask = asyncio.create_task( steerTask() )

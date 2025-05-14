@@ -1,12 +1,13 @@
 import uasyncio as asyncio
-from lib.utils import translateValue
 from driver.motors import driveMotors, stopMotors
-from math import pi
 from storage.store import Store
 store = Store.instance()
 
 async def driveTask():
     '''' drive the motors with the given speed '''
+    from lib.utils import translateValue
+    from math import pi
+    
     try:
         print('starting driveMotorsTask')
         while 1:
@@ -19,10 +20,8 @@ async def driveTask():
 
             vl = (store.surge + translateValue(store.steer,-pi,pi,-1,1)) / 2
             vr = (store.surge - translateValue(store.steer,-pi,pi,-1,1)) / 2
-            
             driveMotors(vl,vr)
-
-            await asyncio.sleep_ms(20) # TODO Try without this delay 
+            await asyncio.sleep_ms(20) 
 
     except asyncio.CancelledError:  
             stopMotors()

@@ -1,8 +1,4 @@
 import uasyncio as asyncio
-from machine import PWM, Pin
-from math import radians, pi
-from lib.utils import translateValue
-from constants.pins import PWM_left_pin, PWM_right_pin
 from storage.store import Store
 store = Store.instance()
 
@@ -12,6 +8,8 @@ motorRight = None
 
 def armMotors():
     ''' arm the eft anf right motors '''
+    from machine import PWM, Pin
+    from constants.pins import PWM_left_pin, PWM_right_pin
     global motorLeft
     global motorRight
 
@@ -43,6 +41,7 @@ def disarmMotors():
 
 def driveMotors(vl=0,vr=0):
     ''' drive the motors with the given speed '''
+    from lib.utils import translateValue
     # clamp max and min motor speeds 0..1 
     vleft = min(1, max(0, vl)) 
     vright = min(1, max(0, vr)) 
@@ -52,8 +51,9 @@ def driveMotors(vl=0,vr=0):
     pwmRight = int( translateValue(vright,0,1,store.minPwmRight,store.maxpwm))
 
     # Drive the motors
-    motorLeft.duty_u16(pwmLeft)
-    motorRight.duty_u16(pwmRight)
+    if motorLeft and motorRight: 
+        motorLeft.duty_u16(pwmLeft)
+        motorRight.duty_u16(pwmRight)
 
 def stopMotors():
     ''' stop the motors by applying the minimum pwm duty cycle '''

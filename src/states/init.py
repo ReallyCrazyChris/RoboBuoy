@@ -18,12 +18,6 @@ gps = GPS()
 class Init(State):
 
     ''' State for the initialization of the robot '''
-    ''' This state is used to initialize the robot and load settings from the filesystem '''
-    ''' It is also used to arm the motors and calibrate the gyro '''
-    ''' This state is not used in normal operation '''
-    ''' It is only used during startup and when the robot is reset '''
-    ''' It is also used to load settings from the filesystem '''
-    
     def __init__( self, sm ):
         self.name = 'init'
         self.sm = sm #statemachine
