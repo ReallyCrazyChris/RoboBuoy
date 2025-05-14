@@ -64,6 +64,7 @@ class Store(object):
         self.gpsalpha = 0.97  # % trust in the gps's course
         self.magalpha = 0.00  # % trust in the compass's course
         self.declinationalpha = 0.00 # % trust in the gps course to calculate the magnetic declination
+        self.gyroalpha = 0.9 # % trust in the gyros correction to course
 
         # Motor State - never set these directly
         self.surge = 0 # desired robot speed 0..1

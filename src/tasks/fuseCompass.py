@@ -11,11 +11,12 @@ async def fuseCompassTask():
         while True:
             try:
                 await asyncio.sleep_ms(100)
-                store.magcourse = imu.readMagHeading() + store.magdeclination
+
+                store.magcourse = imu.readMagHeading()
                 
                 if store.magalpha > 0:
                     # Apply a complementary filter to fuse the compass course with the current course
-                    store.currentcourse = (1.0 - store.magalpha) * store.currentcourse +  store.magcourse * store.magalpha 
+                    store.currentcourse =   (store.magcourse + store.magdeclination) * store.magalpha  + (1.0 - store.magalpha) * store.currentcourse
 
             except MagDataNotReady:
                 # TODO, magnetometer is a resource that needs to be managed by a lock
