@@ -133,7 +133,7 @@ class GPS(object):
 
           
 
-                store.position = (latitude, longitude)
+                store.position = (longitude,latitude)
                 store.positionvalid = True
 
                 # Notify other listening task that a new position is available

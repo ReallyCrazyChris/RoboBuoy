@@ -68,12 +68,12 @@ def positionDifference(position_str:str,destination_str:str) -> tuple:
         it is customized to mitigate the poor floating point precision of Micropython.
         For larger distances the Haversine formula would be needed
     '''
-
-    lat_p = convert_dd_int(position_str[0])
-    lon_p = convert_dd_int(position_str[1])
-
-    lat_d = convert_dd_int(destination_str[0])
-    lon_d = convert_dd_int(destination_str[1])
+    lon_p = convert_dd_int(position_str[0])
+    lat_p = convert_dd_int(position_str[1])
+    
+    lon_d = convert_dd_int(destination_str[0]) 
+    lat_d = convert_dd_int(destination_str[1])
+   
 
     # delta longitude, latitude, in arcdegrees
     dx_arc = lon_d-lon_p 
