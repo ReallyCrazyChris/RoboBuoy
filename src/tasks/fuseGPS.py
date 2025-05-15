@@ -20,9 +20,10 @@ async def fuseGpsTask():
 
             # Fuse the Magnetic Declination with the GPS Declination using a complementary filter
             # This is only done if the Robot is moving (distance to go to waypoint > 10 m)
-            if store.declinationalpha > 0 and store.distance > 10:  #and store.gpsspeed >= 1 
+            if store.declinationalpha > 0 and store.distance > 10  and store.gpsspeed >= 1 :
                 store.magdeclination =  ( store.declinationalpha * (store.gpscourse - store.magcourse)  ) + (1.0 - store.declinationalpha) * store.magdeclination 
-   
+                print(f"gpscourse: {store.gpscourse:.2f}m, declinationalpha={store.declinationalpha:.2f}, magdeclination={store.magdeclination:.2f}, ")
+
 
     except asyncio.CancelledError:
         print( "stopping fuseGpsTask" )    

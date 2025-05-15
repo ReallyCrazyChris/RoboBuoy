@@ -29,6 +29,8 @@ def bind_actions_to_handlers():
     on('gpsalpha', set_gpsalpha)
     on('magalpha', set_magalpha)
     on('declinationalpha', set_declinationalpha)
+    on('gyroalpha', set_gyroalpha)
+
     on('surge', set_surge)
     on('steer', set_steer)
     #on('steergain', set_steergain)
@@ -125,6 +127,9 @@ def set_magalpha(value):
 
 def set_declinationalpha(value):
     store.declinationalpha = float(value)
+
+def set_gyroalpha(value):
+    store.gyroalpha = float(value)
 
 def set_surge(value):
     store.surge = float(value)

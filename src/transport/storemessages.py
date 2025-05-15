@@ -38,6 +38,7 @@ def statemessage():
         "gpsalpha":store.gpsalpha,
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
+        "gyroalpha":store.gyroalpha,
         "surge":store.surge,
         "steer":int(degrees(store.steer)),
         #"steergain":store.steergain,
@@ -109,6 +110,7 @@ def statemessage_chunk6():
         "gpsalpha":store.gpsalpha,
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
+        "gyroalpha":store.gyroalpha,
         "surge":store.surge,
         "steer":int(degrees(store.steer)),
         #"steergain":store.steergain,
@@ -251,6 +253,7 @@ def alphasettingsmessage():
         "gpsalpha":store.gpsalpha,
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
+        "gyroalpha":store.gyroalpha,
     }
 
 

@@ -37,6 +37,7 @@ def persistedstate():
         "gpsalpha":store.gpsalpha,
         "magalpha":store.magalpha,
         "declinationalpha":store.declinationalpha,
+        "gyroalpha":store.gyroalpha,
         #"surge":store.surge,
         #"steer":store.steer,
         #"steergain":store.steergain,

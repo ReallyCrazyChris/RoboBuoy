@@ -4,7 +4,7 @@ import uasyncio as asyncio
 from storage.store import Store
 store = Store.instance()
 
-async def holdPIDTask():
+async def headingPIDTask():
     ''' 
         a PID conttoller is used to dampen the respoinse of the RoboBouy to GPS gitter 
     '''
@@ -30,7 +30,7 @@ async def holdPIDTask():
     store.destination = store.position # TODO this needs to be part of the state control
     
     try: 
-        print('starting holdPIDTask')
+        print('starting headingPIDTask')
 
         # wait for a GPS position to be available
         await gps.positionAvailable.wait()
@@ -83,5 +83,5 @@ async def holdPIDTask():
             await gps.positionAvailable.wait() 
 
     except asyncio.CancelledError:
-        print( "stopping holdPIDTask" )
+        print( "stopping headingPIDTask" )
 

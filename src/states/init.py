@@ -39,7 +39,7 @@ class Init(State):
         # Start the Tasks that keep the Robot on course
         asyncio.create_task( fuseGyroTask() ) # fuse the gyro heading with the current course
         #asyncio.create_task( fuseCompassTask() ) # fuse compass heading with the current course
-        #asyncio.create_task( fuseGpsTask() ) # fuse the gps heading with the current course
+        asyncio.create_task( fuseGpsTask() ) # fuse the gps heading with the current course
         
         # then go to state
         self.transitionTo('manual')

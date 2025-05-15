@@ -61,7 +61,7 @@ class Store(object):
         self.lastErr = 0    # previous error
         
         # Complimentary Filter : How much trust is given in the GPS and Compass Readings 
-        self.gpsalpha = 0.97  # % trust in the gps's course
+        self.gpsalpha = 0.00  # % trust in the gps's course
         self.magalpha = 0.00  # % trust in the compass's course
         self.declinationalpha = 0.00 # % trust in the gps course to calculate the magnetic declination
         self.gyroalpha = 0.9 # % trust in the gyros correction to course
@@ -314,6 +314,15 @@ class Store(object):
     @declinationalpha.setter
     def declinationalpha(self, value):
         self._declinationalpha = max(min(float(value),1),0)
+
+
+    @property
+    def gyroalpha(self):
+        return self._gyroalpha
+
+    @gyroalpha.setter
+    def gyroalpha(self, value):
+        self._gyroalpha = max(min(float(value),1),0)
 
     @property
     def surge(self):
