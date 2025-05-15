@@ -32,7 +32,7 @@ class Store(object):
 
         # Position, Course & Speed
         self.positionvalid = False  # valid gps position
-        self.position = ("49.68630810", "10.825340") # tuple of strings (lat,lon) degree decimal 9 digit precision
+        self.position = ("10.825340","49.68630810" ) # tuple of strings (lon,lat) degree decimal 9 digit precision
     
         self.gpscourse = 0      # radians
         self.gpsspeed = 0.0     # knots
@@ -41,7 +41,7 @@ class Store(object):
         self.currentcourse = 0  # deg° of the current heading -> radians -pi..pi
         
         # AutonomousPathfinding
-        self.destination = ("49.68580458", "10.82547235") # (str,str) degree decimal 9 digit precision
+        self.destination = ("10.825340","49.68630810" ) # tuple of strings (lon,lat) degree decimal 9 digit precision
         self.distance = 0        # float meters : distance to desired posiiton
         self.desiredcourse = 0   # deg° of the desired heading
         self.waypoints = []      # list of tuples of strings (lat,lon) degree decimal 9 digit precision
@@ -159,7 +159,7 @@ class Store(object):
 
     @position.setter
     def position(self, value):
-        ''' position is a tuple of strings (lat,lon) '''
+        ''' position is a tuple of strings (lon,lat) '''
         self._position = tuple(value)[:2]
                               
 
