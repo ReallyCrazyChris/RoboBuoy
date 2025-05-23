@@ -1,4 +1,6 @@
 import uasyncio as asyncio
+from tests.mag import getmagdata
+asyncio.run( getmagdata() )
 
 from test.i2c import testi2c
 print('test i2c')

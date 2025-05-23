@@ -52,7 +52,7 @@ class GPS(object):
         # Events
         self.positionAvailable =  asyncio.ThreadSafeFlag()
         self.speedAvailable =  asyncio.ThreadSafeFlag()
-        self.courseAvailable =  asyncio.ThreadSafeFlag()
+        self.headingAvailable =  asyncio.ThreadSafeFlag()
 
    
 
@@ -152,9 +152,9 @@ class GPS(object):
         return True
 
     def gpvtg(self):
-        """Parse Track Made Good and Ground Speed (VTG) Sentence. Updates speed and course"""
+        """Parse Track Made Good and Ground Speed (VTG) Sentence. Updates speed and heading"""
         try:
-            course = float(self.gps_segments[1])
+            heading = float(self.gps_segments[1])
             spd_knt = float(self.gps_segments[5])
         except ValueError:
             return False
@@ -162,9 +162,9 @@ class GPS(object):
             return False
 
         store.gpsspeed = spd_knt
-        store.gpscourse = normalize(radians(course))
+        store.gpsheading = normalize(radians(heading))
 
-        self.courseAvailable.set() # notifies course.fuseGPS 
+        self.headingAvailable.set() # notifies course.fuseGPS 
         self.speedAvailable.set()
 
         return True

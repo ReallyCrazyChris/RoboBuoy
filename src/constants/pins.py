@@ -18,5 +18,5 @@ SX127x_RST_pin = 23 # lora chip reset
 SX127x_RX_pin = 26  # lora packet received IRQ
 
 # Motor control GPIO pins
-PWM_left_pin = 2
-PWM_right_pin = 13
+PWM_left_pin = 13
+PWM_right_pin = 2

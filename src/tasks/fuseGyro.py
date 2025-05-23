@@ -7,7 +7,7 @@ store = Store.instance()
 
 async def fuseGyroTask():
     ''' 
-    fuses the integrated gyro course with the currentcourse 
+    fuses the integrated gyro course with the heading 
     performs the steering ang pid loop
     '''
     try: 
@@ -19,11 +19,10 @@ async def fuseGyroTask():
 
             # integrate the course with the gyro_z
             # use a complementary filter to set the level of trust in the gyro
-            store.currentcourse = store.gyroalpha * (store.currentcourse + gyro_z * deltaT ) + (1 - store.gyroalpha) * store.currentcourse
+            store.heading = store.gyroalpha * (store.heading + gyro_z * deltaT ) + (1 - store.gyroalpha) * store.heading
 
             #print a table of the current course, gyro course and deltaT
-            #print("currentcourse: %5.2f gyro_z: %5.2f deltaT: %5.2f" % (store.currentcourse, gyro_z, deltaT))
-
+            #print("heading: %5.2f gyro_z: %5.2f deltaT: %5.2f" % (store.heading, gyro_z, deltaT))
 
             await asyncio.sleep_ms(20)  
     except asyncio.CancelledError:

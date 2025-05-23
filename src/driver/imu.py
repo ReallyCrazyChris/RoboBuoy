@@ -3,7 +3,7 @@ Micropython driver for the I2C MPU9250 9-DOF Sensor
 """
 import utime
 from struct import pack, unpack
-from math import atan2, radians
+from math import atan2, radians, degrees
 from driver.i2c import i2c
 from lib.utils import normalize
 
@@ -186,21 +186,22 @@ class IMU(object):
         # apply the Factory Magentometer Sensetivity adjustment
         x,y,z = x * self.asax, y * self.asay , z * self.asaz
 
-        # apply offset
+        # apply hard-iron offset
         x,y,z = x - bias[0], y - bias[1], z - bias[2]
 
-        # apply normalize
-        x,y,z = x / bias[3], y / bias[4], z / bias[5]
+        # apply soft-iron scale
+        x,y,z = x * bias[3], y * bias[4], z * bias[5]
 
-        # apply scale
-        x,y,z = x * bias[6], y * bias[7], z * bias[8]
+        # apply normalize to range -1..1
+        #x,y,z = x / bias[6], y / bias[7], z / bias[8]
 
         return x,y,z
 
     def readMagHeading(self):
         '''returns the magnetic heading in radians -PI to PI'''
         x,y,_ = self.readMag( tuple(store.magbias) )
-        return atan2(y,x)# Radians
+        theta = atan2(x,y)# Radians
+        return theta
 
     #Temperature Sensor
     def readTemp( self ):

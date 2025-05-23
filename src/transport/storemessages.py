@@ -17,17 +17,17 @@ def statemessage():
         "battery":store.battery,
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":int(degrees(store.gpscourse)),
+        "gpsheading":int(degrees(store.gpsheading)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":int(degrees(store.magcourse)),
+        "magheading":int(degrees(store.magheading)),
         "magdeclination":int(degrees(store.magdeclination)),
-        "currentcourse":int(degrees(store.currentcourse)),
+        "heading":int(degrees(store.heading)),
         "destination":store.destination,
         "distance":store.distance,
-        "desiredcourse":int(degrees(store.desiredcourse)),
+        "course":int(degrees(store.course)),
         "waypoints":store.waypoints,
         "waypointarrivedradius":store.waypointarrivedradius,
-        "holdgain":store.holdgain,
+        "holdradius":store.holdradius,
         "Kp":store.Kp,
         "Ki":store.Ki,
         "Kd":store.Kd,
@@ -69,19 +69,19 @@ def statemessage_chunk2():
     return {
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":int(degrees(store.gpscourse)),
+        "gpsheading":int(degrees(store.gpsheading)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":int(degrees(store.magcourse)),
+        "magheading":int(degrees(store.magheading)),
         "magdeclination":int(degrees(store.magdeclination)),
     }
 
 def statemessage_chunk3():
     ''' state that changes when the robot is initalized '''
     return {
-        "currentcourse":int(degrees(store.currentcourse)),
+        "heading":int(degrees(store.heading)),
         "destination":store.destination,
         "distance":store.distance,
-        "desiredcourse":int(degrees(store.desiredcourse)),
+        "course":int(degrees(store.course)),
     }
 
 def statemessage_chunk4():
@@ -89,7 +89,7 @@ def statemessage_chunk4():
     return {
         "waypoints":store.waypoints,
         "waypointarrivedradius":store.waypointarrivedradius,
-        "holdgain":store.holdgain,
+        "holdradius":store.holdradius,
     }
 
 def statemessage_chunk5():
@@ -138,17 +138,17 @@ def motionmessage():
         #"battery":store.battery,
         "positionvalid":store.positionvalid,
         "position":store.position,
-        "gpscourse":int(degrees(store.gpscourse)),
+        "gpsheading":int(degrees(store.gpsheading)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":int(degrees(store.magcourse)),
+        "magheading":int(degrees(store.magheading)),
         "magdeclination":int(degrees(store.magdeclination)),
-        "currentcourse":int(degrees(store.currentcourse)),
+        "heading":int(degrees(store.heading)),
         #"destination":store.destination,
         #"distance":store.distance,
-        "desiredcourse":int(degrees(store.desiredcourse)),
+        "course":int(degrees(store.course)),
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
-        #"holdgain":store.holdgain,
+        #"holdradius":store.holdradius,
         #"Kp":store.Kp,
         #"Ki":store.Ki,
         #"Kd":store.Kd,
@@ -188,17 +188,17 @@ def coursesettingsmessage():
         #"battery":store.battery,
         #"positionvalid":store.positionvalid,
         #"position":store.position,
-        "gpscourse":int(degrees(store.gpscourse)),
+        "gpsheading":int(degrees(store.gpsheading)),
         "gpsspeed":store.gpsspeed,
-        "magcourse":int(degrees(store.magcourse)),
+        "magheading":int(degrees(store.magheading)),
         "magdeclination":int(degrees(store.magdeclination)),
-        "currentcourse":int(degrees(store.currentcourse)),
+        "heading":int(degrees(store.heading)),
         #"destination":store.destination,
         #"distance":store.distance,
-        "desiredcourse":int(degrees(store.desiredcourse)),
+        "course":int(degrees(store.course)),
         #"waypoints":store.waypoints,
         #"waypointarrivedradius":store.waypointarrivedradius,
-        #"holdgain":store.holdgain,
+        #"holdradius":store.holdradius,
         #"Kp":store.Kp,
         #"Ki":store.Ki,
         #"Kd":store.Kd,
@@ -224,7 +224,7 @@ def holdsettingsmessage():
     ''' configuraiton parameters for holding station'''
     return {
         "waypointarrivedradius":store.waypointarrivedradius,
-        "holdgain":store.holdgain,
+        "holdradius":store.holdradius,
     }
 
 def pidsettingsmessage():

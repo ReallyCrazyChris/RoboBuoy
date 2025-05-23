@@ -11,7 +11,6 @@ ampy rmdir /storage
 ampy rmdir /tasks
 ampy rmdir /transport    
 
-echo uploading new files
 echo uploading constants
 ampy put ./src/constants /constants
 echo uploading drivers

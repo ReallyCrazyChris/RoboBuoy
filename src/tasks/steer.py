@@ -32,7 +32,7 @@ async def steerTask():
             startTime = currentTime
 
             # update the proportional error
-            store.error = store.desiredcourse - store.currentcourse # radians
+            store.error = store.course - store.heading # radians
             p = store.Kp * store.error
 
             # update the integral error

@@ -18,7 +18,7 @@ class Manual(State):
 
     def start(self):
         store.mode=self.name
-        store.desiredcourse = store.currentcourse
+        store.course = store.heading
         self.driveTask = asyncio.create_task( driveTask() )
         self.steerTask = asyncio.create_task( steerTask() )
 

@@ -6,7 +6,7 @@ imu = IMU()
 
 ########################################
 # Calibrate Magnetometer Async Task
-async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
+async def calibrateMagTask(samples:int=1000,delay:int=100):
     '''
     create magnetometer bias, normailization and scaling
     this is perferformed while the magnetomer is rotating around all axes
@@ -17,18 +17,23 @@ async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
         samples = int(samples) 
         delay = int(delay) 
 
-        minx = 0
-        maxx = 0
-        miny = 0
-        maxy = 0
-        minz = 0
-        maxz = 0
+        # initialize the varibles with actual data
+        try:
+            x,y,z = imu.readMag()  
+            minx = x
+            maxx = x
+            miny = y
+            maxy = y
+            minz = z
+            maxz = z
+            await asyncio.sleep_ms(delay)
+        except MagDataNotReady:
+                pass
 
         # collect minimum and maximum magnetometer samples
         while samples :
             try:
                 await asyncio.sleep_ms(delay)
-            
                 x,y,z = imu.readMag()  
                 samples = samples - 1
                 minx = min(x,minx)
@@ -37,42 +42,33 @@ async def calibrateMagTask(samples:int=1000,delay:int=20) -> tuple:
                 maxy = max(y,maxy)
                 minz = min(z,minz)
                 maxz = max(z,maxz)
-            
             except MagDataNotReady:
                 pass
                 
-
-        # Average
+        # Calculate hard iron offsets (center of min/max for each axis)
         cx = (maxx + minx) / 2
         cy = (maxy + miny) / 2  
         cz = (maxz + minz) / 2  
 
-        # Normailze
+        # Calculate soft iron scaling (scale each axis to spherical)
+        avg_delta = ( (maxx - minx) +  (maxy - miny) +  (maxz - minz) ) / 3
+        sx = avg_delta / (maxx - minx) if maxx != minx else 1
+        sy = avg_delta / (maxy - miny) if maxy != miny else 1
+        sz = avg_delta / (maxz - minz) if maxz != minz else 1
+
+        # Factors to soft iron scaling the data in a range -1..1
         nx = abs(maxx - cx)
         ny = abs(maxy - cy)
         nz = abs(maxz - cz)
 
-        # Soft iron correction
-        avg_delta_x = (maxx - minx) / 2
-        avg_delta_y = (maxy - miny) / 2
-        avg_delta_z = (maxz - minz) / 2
-
-        avg_delta = (avg_delta_x + avg_delta_y + avg_delta_z) / 3
-        
-        sx = avg_delta / avg_delta_x
-        sy = avg_delta / avg_delta_y
-        sz = avg_delta / avg_delta_z
-
-        print("bias",cx,cy,cz)
-        print("normalisation",nx,ny,nz)
-        print("scale",sx,sy,sz)
+        print("hard iron offsets",cx,cy,cz)
+        print("soft iron scaling",sx,sy,sz)
+        print("normalize factors",nx,ny,nz)
 
         # update the magbias
-        store.magbias = (cx, cy, cz ,nx, ny, nz, sx, sy, sz) 
-        # save the imu settings (incle magbias)
-        #imu.save()
+        store.magbias = (cx, cy, cz, sx, sy, sz, nx, ny, nz) 
 
-        return cx, cy, cz ,nx, ny, nz, sx, sy, sz
+        return cx, cy, cz, sx, sy, sz, nx, ny, nz
     
     except asyncio.CancelledError:
         print( "stopping calibrateMagTask" ) 
