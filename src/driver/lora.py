@@ -295,7 +295,7 @@ class Lora:
         if f & IRQ_PAYLOAD_CRC_ERROR_MASK == 0:
             self.loraReceivedFlag.set()
 
-    async def receiveTask(self):
+    async def receiveLoraTask(self):
         ''' receives packets via lora and adds them to the receive queue, then processes the packets '''
 
         print('starting lora receiveTask')

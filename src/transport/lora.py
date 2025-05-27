@@ -1,31 +1,31 @@
 import uasyncio as asyncio
 import gc
-from driver.bleuart import BLEUART
+from driver.lora import lora
 from lib.events import dispatch
 from transport.action_handlers import bind_actions_to_handlers
 from transport.request_handlers import bind_requests_to_handlers
 
-bleuart = BLEUART()
-bleuartLock = asyncio.Lock() # async lock to prevent multiple communication actions at the same time
+lora = lora()
+loraLock = asyncio.Lock() # async lock to prevent multiple communication actions at the same time
 
-sendqueue = [] # of messages to be sent
-receivequeue = [] # of messages that have been received
+lorasendqueue = [] # of messages to be sent
+lorareceivequeue = [] # of messages that have been received
     
 def send(*packet):
     """sends commands to a host server"""
-    if bleuart.is_connected:
-        sendqueue.append(packet)
+    if lora.is_connected:
+        lorasendqueue.append(packet)
 
 def receive(packet):
     """recives and queue's commands to be reacted apon"""
-    receivequeue.append(packet)
+    lorareceivequeue.append(packet)
 
 def react():
-    """ processed the commands in the receivequeue"""
+    """ processed the commands in the lorareceivequeue"""
 
-    while len(receivequeue):
+    while len(lorareceivequeue):
 
-        packet = receivequeue.pop(0)
+        packet = lorareceivequeue.pop(0)
         action = packet.pop(0)
 
         try:
@@ -49,13 +49,13 @@ async def receiveTask():
         bind_requests_to_handlers()
 
         while True:
-            if bleuart.message != None:
-                receive(bleuart.message)
+            if lora.message != None:
+                receive(lora.message)
                 gc.collect()
                 react()  # TODO this may need its own async co-routine
             # clear processed message          
-            bleuart.message = None
-            await bleuart.received_flag.wait()
+            lora.message = None
+            await lora.received_flag.wait()
             
     except asyncio.CancelledError:
         print('stoping receiveTask') 
@@ -66,13 +66,13 @@ async def sendTask():
     try:
 
         while True:    
-            if len(sendqueue) > 0:
-                for packet in sendqueue:
-                    await bleuart.lock.acquire()
-                    await bleuart.notify( packet )
-                    bleuart.lock.release()
+            if len(lorasendqueue) > 0:
+                for packet in lorasendqueue:
+                    await lora.lock.acquire()
+                    await lora.notify( packet )
+                    lora.lock.release()
                 # clear processed message
-                sendqueue.clear() 
+                lorasendqueue.clear() 
             else:
                 await asyncio.sleep_ms(200)          
 
@@ -87,8 +87,8 @@ async def advertiseTask():
     try:
         while True:    
             await asyncio.sleep_ms(2000) 
-            await bleuart.lock.acquire()
-            bleuart.advertise()
-            bleuart.lock.release()
+            await lora.lock.acquire()
+            lora.advertise()
+            lora.lock.release()
     except asyncio.CancelledError:
         print('stopping advertiseTask')    

@@ -1,4 +1,5 @@
 import uasyncio as asyncio
+from lib.utils import translateValue
 from storage.store import Store
 store = Store.instance()
 
@@ -41,7 +42,7 @@ def disarmMotors():
 
 def driveMotors(vl=0,vr=0):
     ''' drive the motors with the given speed '''
-    from lib.utils import translateValue
+
     # clamp max and min motor speeds 0..1 
     vleft = min(1, max(0, vl)) 
     vright = min(1, max(0, vr)) 

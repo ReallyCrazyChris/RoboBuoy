@@ -24,8 +24,8 @@ class Init(State):
 
     async def start(self):
         store.mode=self.name
-        # initialization of the robot goes here
-        await calibrateGyroTask()
+        # initialization of the robot
+
         loadsettings()  # load settings from the filesystem
         await armMotorsTask()
 
